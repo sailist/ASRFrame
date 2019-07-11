@@ -218,6 +218,10 @@ jointly 下是联合训练模型，从语音->汉字的端到端模型
 语言模型部分目前效果最好的模型是SOMMalpha,预训练权重文件`SOMMalpha_step_18000.h5`
 
 ## 结果展示
+在吐字清洗，语速正常，普通话标注你的情况下，部分识别效果还是可以的，以及拼音大部分都能识别正确
+
+![ASRFrame/image/ui.png](ASRFrame/image/ui.png)
+
 ### 声学模型部分
 对于thchs30语料,dcbnn1d大概在将全部语料迭代训练100次的时候会拟合
 ![image/thchs30-DCBNN1Dplus_step_79420.png](image/thchs30-DCBNN1Dplus_step_79420.png)
@@ -229,6 +233,7 @@ jointly 下是联合训练模型，从语音->汉字的端到端模型
 对于语言模型，基本能很低的loss，并且如果有针对性的测试，能得到一个比较好的结果，但缺点就是由于时间关系，语料不足，因此还没有达到极限
 
 ![image/SOMM_epoch_92_step_46000.png](image/SOMM_epoch_92_step_46000.png)
+
 
 
 
@@ -314,7 +319,7 @@ wen2 kou3 cheng1 na1 mo2 e1 mi2 tuo2 fo2 gui1 dui4 yue1 shi1 fu ceng2 ji4 fou3
 
 以及`clear_unavai.sh`脚本中提到的语料，如果不删除，可能会报错，建议将脚本中的路径更改后，运行删除这些语料
 
-> 语料中大多是一些非常见词，食之无味弃之可惜，个人认为删掉为好
+> 这些语料中大多是一些非常见词，食之无味弃之可惜，个人认为删掉为好
 
 ### SOMM模型停止训练
 由于未知的原因，训练大概50000个batch的时候会报错停止，因为没有错误代码提示（core dump），不清楚问题具体原因，因此这里提供的解决方案就是以预训练的模型为基础，继续训练
