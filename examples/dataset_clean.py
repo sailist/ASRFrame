@@ -1,6 +1,6 @@
 # 用于清洗数据的可以直接运行的脚本
-
 from util.cleaner import *
+
 def check_path(path):
     return path is not None and os.path.exists(path)
 

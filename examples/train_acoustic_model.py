@@ -2,7 +2,7 @@ from acoustic import *
 from acoustic import DCNN2D
 from util.reader import *
 from feature.mel_feature import MelFeature5
-from util.mapmap import PinyinMapper,ChsMapper
+from util.mapmap import PinyinMapper
 
 def train_templete(datagenes:list,load_model=None):
     '''
@@ -156,82 +156,82 @@ def train_dcbnn1dplus(datagenes:list, load_model = None):
     # model_helper.fit(vloader,epoch=-1, save_step=len(x_set)//batch_size, use_ctc=True)
     model_helper.fit(vloader,epoch=-1, save_step=len(x_set)//batch_size//30, use_ctc=True)
 
-def train_las(path,load_model = None):
-    '''
-    停止维护，2019年6月27日，时间有限没法清楚能否训练出来，以后有机会再测试一下
-        该方法因为类的变更，不保证能够运行成功
-    '''
-    w,h = 1024,128
+# def train_las(path,load_model = None):
+#     '''
+#     停止维护，2019年6月27日，时间有限没法清楚能否训练出来，以后有机会再测试一下
+#         该方法因为类的变更，不保证能够运行成功
+#     '''
+#     w,h = 1024,128
+#
+#     thu_data = Thchs30(path)
+#     x_set,y_set = thu_data.load_from_path()
+#
+#     model_helper = LASModel()
+#     model_helper.compile(feature_shape=(w,h),ms_output_size=1437)
+#     if load_model is not None:
+#         load_model = os.path.abspath(load_model)
+#         model_helper.load(load_model)
+#
+#     for i in range(7,14):
+#         vloader = VoiceLoader(x_set, y_set,
+#                               batch_size=16,
+#                               n_mels=128,
+#                               feature_pad_len=w,
+#                               max_label_len=256,)
+#                               # cut_sub=int(16*(1.5**i)), )#一步一步的扩大数据集，更容易拟合貌似
+#
+#         model_helper.fit(vloader,epoch=int(6*(1.5**i)))
 
-    thu_data = Thchs30(path)
-    x_set,y_set = thu_data.load_from_path()
+# def train_relas(path,load_model = None):
+#     '''
+#     停止维护2019年7月1日，效果貌似很差，主要时间有限，以后有机会可以尝试一下
+#         该方法因为类的变更，不保证能够运行成功
+#     '''
+#     w,h = 1024,128
+#
+#     thu_data = Thchs30(path)
+#     x_set,y_set = thu_data.load_from_path()
+#
+#     model_helper = ReLASModel()
+#     model_helper.compile(feature_shape=(w,h),ms_output_size=1437)
+#     if load_model is not None:
+#         load_model = os.path.abspath(load_model)
+#         model_helper.load(load_model)
+#
+#     for i in range(14):
+#         vloader = VoiceLoader(x_set, y_set,
+#                               batch_size=16,
+#                               n_mels=128,
+#                               feature_pad_len=w,
+#                               sil_mode=-1,
+#                               max_label_len=256,
+#                               cut_sub=int(16*(1.5**i)), )#一步一步的扩大数据集，更容易拟合貌似
+#
+#         model_helper.fit(vloader,epoch=int(6*(1.5**i)))
 
-    model_helper = LASModel()
-    model_helper.compile(feature_shape=(w,h),ms_output_size=1437)
-    if load_model is not None:
-        load_model = os.path.abspath(load_model)
-        model_helper.load(load_model)
-
-    for i in range(7,14):
-        vloader = VoiceLoader(x_set, y_set,
-                              batch_size=16,
-                              n_mels=128,
-                              feature_pad_len=w,
-                              max_label_len=256,)
-                              # cut_sub=int(16*(1.5**i)), )#一步一步的扩大数据集，更容易拟合貌似
-
-        model_helper.fit(vloader,epoch=int(6*(1.5**i)))
-
-def train_relas(path,load_model = None):
-    '''
-    停止维护2019年7月1日，效果貌似很差，主要时间有限，以后有机会可以尝试一下
-        该方法因为类的变更，不保证能够运行成功
-    '''
-    w,h = 1024,128
-
-    thu_data = Thchs30(path)
-    x_set,y_set = thu_data.load_from_path()
-
-    model_helper = ReLASModel()
-    model_helper.compile(feature_shape=(w,h),ms_output_size=1437)
-    if load_model is not None:
-        load_model = os.path.abspath(load_model)
-        model_helper.load(load_model)
-
-    for i in range(14):
-        vloader = VoiceLoader(x_set, y_set,
-                              batch_size=16,
-                              n_mels=128,
-                              feature_pad_len=w,
-                              sil_mode=-1,
-                              max_label_len=256,
-                              cut_sub=int(16*(1.5**i)), )#一步一步的扩大数据集，更容易拟合貌似
-
-        model_helper.fit(vloader,epoch=int(6*(1.5**i)))
-
-def train_lasctc(path,load_model = None):
-    '''
-    停止维护2019年7月1日，跑不动
-        该方法因为类的变更，不保证能够运行成功
-    '''
-    w,h = 1024,128
-    max_label_len = 64
-
-    thu_data = Thchs30(path)
-    x_set,y_set = thu_data.load_from_path()
-
-    vloader = VoiceLoader(x_set,y_set,
-                          n_mels=128,feature_pad_len=w,
-                          max_label_len=max_label_len,
-                          cut_sub=16,
-                          sil_mode=-1,
-                          )
-
-    model_helper = LASCTCModel()
-    model_helper.compile(feature_shape=(w,h),label_max_string_length=max_label_len,ms_output_size=vloader.pymap.max_index)
-
-    if load_model is not None:
-        load_model = os.path.abspath(load_model)
-        model_helper.load(load_model)
-
-    model_helper.fit(vloader)
+# def train_lasctc(path,load_model = None):
+#     '''
+#     停止维护2019年7月1日，跑不动
+#         该方法因为类的变更，不保证能够运行成功
+#     '''
+#     w,h = 1024,128
+#     max_label_len = 64
+#
+#     thu_data = Thchs30(path)
+#     x_set,y_set = thu_data.load_from_path()
+#
+#     vloader = VoiceLoader(x_set,y_set,
+#                           n_mels=128,feature_pad_len=w,
+#                           max_label_len=max_label_len,
+#                           cut_sub=16,
+#                           sil_mode=-1,
+#                           )
+#
+#     model_helper = LASCTCModel()
+#     model_helper.compile(feature_shape=(w,h),label_max_string_length=max_label_len,ms_output_size=vloader.pymap.max_index)
+#
+#     if load_model is not None:
+#         load_model = os.path.abspath(load_model)
+#         model_helper.load(load_model)
+#
+#     model_helper.fit(vloader)

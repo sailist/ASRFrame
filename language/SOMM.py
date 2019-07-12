@@ -1,6 +1,5 @@
-from keras.layers import Input,Dense,GRU,Bidirectional,Concatenate,Conv1D,MaxPooling1D,BatchNormalization,Dropout,Embedding,Add,Multiply,Lambda
+from keras.layers import Input,Dense,Conv1D,MaxPooling1D,BatchNormalization,Embedding,Add
 from keras import Model
-from keras.initializers import Constant
 from core.base_model import LanguageModel
 
 class SOMMword(LanguageModel):

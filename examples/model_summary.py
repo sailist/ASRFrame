@@ -3,6 +3,7 @@
 from acoustic import *
 from util.reader import *
 from feature.mel_feature import MelFeature5
+from util.mapmap import PinyinMapper
 
 def summary_dcbann1d(datagenes:list, load_model = None):
     w, h = 1600, 200

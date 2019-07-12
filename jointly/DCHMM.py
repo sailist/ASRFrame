@@ -4,8 +4,6 @@ from util.mapmap import PinyinMapper,ChsMapper
 from language.HMM import PHHMM
 from acoustic.ABCDNN import DCBNN1D
 
-
-
 class DCHMM(BaseJoint):
     '''DCBNN1D + HMM ，HMM模型来自于库 Pinyin2Hanzi:https://github.com/letiantian/Pinyin2Hanzi'''
     def compile(self, ac_model_load_path):
@@ -17,7 +15,6 @@ class DCHMM(BaseJoint):
 
 
         self.py_w = 64
-
         model_helper = PHHMM()
         self.lg_model = model_helper
 
@@ -34,7 +31,6 @@ class DCHMM(BaseJoint):
 
         batch = [xs, None, feature_len, None], None
         prob_result = self.ac_model.prob_predict(batch)
-
 
         argmax_res,prob = self.ac_model.ctc_decoder.ctc_decode(prob_result, feature_len,return_prob=True)
         pylist_pred = self.py_map.batch_vector2pylist(argmax_res, return_word_list=True, return_list=True)

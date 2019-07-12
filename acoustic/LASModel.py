@@ -1,5 +1,5 @@
 '''
-本文件内所有模型涉及LSTM，训练非常慢，只在小数据集上拟合过，无法保证其在大数据集上的效果
+本文件内所有模型涉及LSTM，训练非常慢，目前只在小数据集上拟合过，无法保证其在大数据集上的效果
 '''
 from keras.models import Model
 from keras.layers import Conv1D,Dense, Dropout, Input, Reshape
