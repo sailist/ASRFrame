@@ -6,4 +6,5 @@ sommalpha = config.join_model_path("language/SOMMalpha_step_11500.h5")
 
 
 if __name__ == "__main__":
-    predict_dcsom(dcbnn,sommalpha)
+    # predict_dcsom(dcbnn,sommalpha)
+    predict_sommalpha(sommalpha)

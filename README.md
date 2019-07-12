@@ -5,6 +5,8 @@
 再加个star吧！
 
 # 介绍
+项目链接：https://github.com/sailist/ASRFrame
+
 一个完整的语音识别框架，包括从数据清洗接口，数据读取接口到语音模型、声学模型、到最后的模型整合和UI的一整套流程
 
 目前声学部分拼音识别准确率已经比较高了，但语言模型仍然存在诸多问题需要解决，因此开源该项目，希望大家群策群力，将它的效果进行提升。
@@ -229,7 +231,7 @@ jointly 下是联合训练模型，从语音->汉字的端到端模型
 ## 结果展示
 在吐字清洗，语速正常，普通话标注你的情况下，部分识别效果还是可以的，以及拼音大部分都能识别正确
 
-![ASRFrame/image/ui.png](ASRFrame/image/ui.png)
+![image/ui.png](image/ui.png)
 
 ### 声学模型部分
 对于thchs30语料,dcbnn1d大概在将全部语料迭代训练100次的时候会拟合
@@ -243,8 +245,7 @@ jointly 下是联合训练模型，从语音->汉字的端到端模型
 
 ![image/SOMM_epoch_92_step_46000.png](image/SOMM_epoch_92_step_46000.png)
 
-
-
+![image/SOMMalpha_epoch_77_step_38500.png](image/SOMMalpha_epoch_77_step_38500.png)
 
 ## 参考资料
 

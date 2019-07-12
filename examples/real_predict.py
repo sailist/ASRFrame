@@ -54,6 +54,7 @@ def predict_sommalpha(path):
         xs = [pinyin_map.alist2vector(string)]
         print(xs)
         batch = pad_sequences(xs,maxlen=max_label_len,padding="post",truncating="post"),None
-        result = model_helper.predict(batch)
-        print(result)
+        result = model_helper.predict(batch)[0]
+        # print(result)
+        print(result.replace("_",""))
 
