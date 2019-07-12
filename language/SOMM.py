@@ -66,6 +66,6 @@ class SOMMalpha(LanguageModel):
 
 
 if __name__ == "__main__":
-    s = SOMMword()
+    s = SOMMalpha()
     s.compile(ms_pinyin_size=1436,ms_output_size=8009)
     pass

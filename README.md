@@ -67,15 +67,17 @@ pip install -r requirement.txt
 ### 配置路径
 在config下，配置相应的语料路径，根路径即可
 
-### 清洗语料
+### 清洗声学语料
 数据集的格式不太一样，因此需要稍微清洗一下，这个过程包括生成wav文件下相应的标注文件（如果没有），标注拼音（如果没有）
 ```bash
 python run_clean.py
 ```
-等待数据清洗完成，如果只下了一部分数据可以注释掉其中的几行
+等待数据清洗完成，如果只下了一部分数据集可以选择性的清洗
 
 其中拼音以空格隔开，并忽略所有汉字中的空格，英文字母，数字
-标注拼音使用 pypinyin
+> 标注拼音使用 pypinyin
+
+最终所有数据集的格式如下：不管目录结构，一个wav文件下对应一个同名文本文件作为标签，文本内第一行是中文，第二行是拼音
 
 会得到如下格式的输出
 ```text
@@ -95,11 +97,18 @@ Load pinyin dict. Max index = 1432.
 
 ```
 
+### 处理用于语言模型的语料
+这个由于时间关系没有去找更多的语料，因此只写了清洗wiki的方法:
+```bash
+python run_build_corpus.py
+```
+这次清洗大概要跑大概两天以上的时间，会生成约2000w条的语料
+
 ### 统计数据信息
 ```bash
 python run_summary.py
 ```
-对下载下来的数据进行统计，输出相应的信息和图片，如果没有意外，控制台输出如下：
+对下载下来的数据集进行统计（只针对声学模型），输出相应的信息和图片，如果没有意外，控制台输出如下：
 ```text
 start to summary the Thchs30 dataset
 checked 13375 wav files:/data/voicerec/dataset/dataset/thchs30-openslr/data_thchs30/data/D6_938.wavv
@@ -143,11 +152,11 @@ result from 231664 sample, used 164.35475000000002 sec
 ```
 
 ### 训练
-确保清洗完数据后运行：运行相应的模型就将相应的代码取消注释即可
+确保清洗完数据后运行`run_train.py`：注意查看一下文件，将要训练的模型的代码取消注释即可
 ```bash
 python run_train.py
 ```
-声学模型部分：目前保证没有错误的声学模型是DCBNN1D，如果不使用预训练权重的话第二个参数注意为None
+声学模型部分：目前保证没有运行错误能跑通的声学模型是DCBNN1D，如果不使用预训练权重的话第二个参数注意为None
 语言模型部分：目前仅提供传统的HMM（使用的Pinyin2Hanzi的库）和Somial改（我称之为SOMM，具体分为SOMMalpha和SOMMword，结构相同，粒度不同）
 
 ### 真实使用

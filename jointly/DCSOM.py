@@ -41,7 +41,6 @@ class DCSOM(BaseJoint):
         batch = [xs, None, feature_len, None], None
         prob_result = self.ac_model.prob_predict(batch)
 
-
         argmax_res,ctc_prob = self.ac_model.ctc_decoder.ctc_decode(prob_result, feature_len,return_prob=True)
         pylist_pred = self.py_map.batch_vector2pylist(argmax_res, return_word_list=True, return_list=True)
 
@@ -54,17 +53,19 @@ class DCSOM(BaseJoint):
         xs = self.audio_tool.noise_filter(xs)
         py_index_list_batch, pylist_batch,ctc_prob = self.voice_reco(xs)
 
-        pylist_batch = [[i.strip("12345") for i in sample] for sample in pylist_batch]
-        alpha_batch = ["".join(sample) for sample in pylist_batch]
+        raw_pylist_batch = [[i.strip("12345") for i in sample] for sample in pylist_batch]
+        alpha_batch = ["".join(sample) for sample in raw_pylist_batch]
 
         alpha_vector_batch = self.py_map.batch_alist2vector(alpha_batch)
         alpha_vector_batch = TextLoader2.corpus2feature(alpha_vector_batch,self.lgmodel_input_shape[0])
 
         ch_list_batch,prob_batch = self.lg_model.predict([alpha_vector_batch,None],True)
 
-        pyline = " ".join(np.concatenate(pylist_batch).tolist())
+        pyline = np.concatenate(pylist_batch).tolist()
         chline = ",".join(ch_list_batch).replace("_","")
-        return pyline,chline,ctc_prob[0]
+
+        print(pyline,chline)
+        return pyline,chline,[ctc_prob[0]]
 
 
 if __name__ == "__main__":

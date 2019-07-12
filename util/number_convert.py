@@ -25,6 +25,7 @@ def sadd(x):
     return x
 
 def convert(i,pure_number = False):
+    raw = i
     try:
         if pure_number:
             i = list(str(i))
@@ -37,7 +38,9 @@ def convert(i,pure_number = False):
                 i[(i.index(j))] = num[int(j)]
             i = sadd(i)
     except:
-        return convert(i,True)
+        if pure_number:
+            return ""
+        return convert(raw,True)
     return i
 
 
@@ -103,4 +106,4 @@ def dl(x):
     return x
 
 if __name__ == "__main__":
-    print(convert(100,False))
+    print(convert("0",True))

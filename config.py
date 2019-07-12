@@ -39,6 +39,7 @@ join_model_path = lambda x:os.path.join(model_dir, x)
 
 
 latest = {
+
     "trans2d":"TransModel2D_step_38000.h5",
     "las":"LASModel_model_10800.h5",
     "dcbnn1d":"DCBNN1D_cur_best.h5",

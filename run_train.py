@@ -1,10 +1,10 @@
 import config
 from examples import train_language_model as lexample
 from examples import train_acoustic_model as aexample
-
 from util.reader import ST_CMDS,Thchs30,Primewords,AiShell,Z200,TextDataGenerator
+
 stcmd = ST_CMDS(config.stcmd_datapath) # 据说还可以
-thchs = Thchs30(config.thu_datapath) # 同质性太高
+thchs = Thchs30(config.thu_datapath) # 同质性太高，不过好拟合，可以用来测试模型的效果，在这个数据上都没法得到比较好的结果的就没啥使用的必要了
 prime = Primewords(config.prime_datapath)
 aishell = AiShell(config.aishell_datapath) # 据说数据集很差，不用该数据训练
 z200 = Z200(config.z200_datapath)
@@ -20,32 +20,36 @@ config.model_dir = "./model/"
 '''效果目前来看很不错，但是目前（2019年7月9日）下语料不足，貌似过拟合了，需要扩充语料后再尝试'''
 # lexample.train_somiao([thchs,stcmd,prime,aishell,z200],load_model=None)
 # lexample.train_sommalpha(wiki, load_model=None)
-lexample.train_sommalpha(wiki, load_model=config.join_model_path("./language/SOMMalpha_step_50500.h5"))
+# lexample.train_sommalpha(wiki, load_model=config.join_model_path("./language/SOMMalpha_step_50500.h5"))
 
 
 '''声学模型——————————————————————————————————————————————————————————————————————————————————'''
 
 '''目前最有效的模型'''
 # aexample.train_dcbnn1d([z200], config.join_model_path("./acoustic/SOMMalpha_step_45500.h5"))
-# examples.train_dcbnn1d([thchs,z200,prime,aishell,stcmd]
+# aexample.train_dcbnn1d([thchs,z200,prime,aishell,stcmd]
 #                   ,load_model=config.join_path("DRModel_step_45000.h5"))
 
 
 '''2019年7月2日08:34:19，开始尝试'''
-# examples.train_dcbnn1dplus([thchs,z200,stcmd,aishell,prime],
-#                            load_model=config.join_path("DCBNN1Dplus_step_79420.h5"))
+'''目前来看效果反而没有dcbnn1d好，如果添加残差结构可能会好一些'''
+aexample.train_dcbnn1dplus([thchs,z200,stcmd,aishell,prime],
+                           load_model=None)
 
 
 '''2019年7月2日08:34:14，效果不好，停止训练，具体情报参考类下的注释'''
-# examples.summary_dcbann1d([thchs],
+# aexample.summary_dcbann1d([thchs],
 #                         load_model=config.join_path("DRAModel_step_7000.h5"))
 
+
+
+'''======================================================================================'''
+'''以下训练方法停止更新，效果都不怎么好=_='''
 # examples.train_trans("/home/sailist/download/")
 # examples.try_predict_trans("/data/voicerec/z200","./model/model_20000.h5")
 # examples.train_trans("/data/voicerec/z200",)
 # examples.train_trans("/data/voicerec/z200","./model/model_5000.h5")
 # examples.train_trans_thu("/data/voicerec/dataset/dataset/data_thchs30/")
-
 
 '''效果没有dr好，但勉强也还可以，可以不考虑了'''
 # examples.train_dcnn2d([thchs,stcmd],)

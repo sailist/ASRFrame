@@ -130,10 +130,7 @@ class Front():
             self.change()
         self.messsage.set('已完成')
 
-
-            
-            
-    def testfun(self,fdk,arg1):        
+    def testfun(self,fdk,arg1):
         def fun(fdk):
             for i in range(self.tagnum):
                 if i == arg1:
