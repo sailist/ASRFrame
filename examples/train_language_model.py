@@ -1,6 +1,5 @@
 from util.reader import *
 from util.mapmap import PinyinMapper,ChsMapper
-
 from language.DCNN import DCNN1D
 from language.SOMM import SOMMword,SOMMalpha
 

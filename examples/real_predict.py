@@ -1,11 +1,11 @@
 # 请在根目录下运行，不然可能会找不到模型
-
 import os
 from keras.preprocessing.sequence import pad_sequences
 from util.mapmap import PinyinMapper,ChsMapper
 from jointly.DCHMM import DCHMM
 from jointly.DCSOM import DCSOM
 from language.SOMM import SOMMalpha
+
 dir_path = os.path.split(os.path.realpath(__file__))[0] #"./util"
 
 def predict_dchmm(path = "./model/DCBNN1D_cur_best.h5"):
