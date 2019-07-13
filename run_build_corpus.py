@@ -2,4 +2,4 @@
 from util.build_wiki_corpus import build
 
 if __name__ == "__main__":
-    build("path/of/root","path/of/output")
+    build("/data/voicerec/wiki/wiki_zh","/data/voicerec/wiki/wiki_corpus_2")

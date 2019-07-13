@@ -33,7 +33,7 @@ def predict_dcsom(ac_path = "./model/DCBNN1D_cur_best.h5",lg_path = "./model/lan
     dcs.compile(ac_path,lg_path)
     while True:
         try:
-            print(dcs.record_from_cmd(10))
+            print(dcs.record_from_cmd(5))
         except:
             print("[info*]未识别到语音")
 

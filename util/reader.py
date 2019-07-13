@@ -212,6 +212,7 @@ class VoiceLoader(DataLoader):
                  cut_sub = None,vad_cut = True,
                  melf = None,
                  check = True,
+                 padding = True,
                  divide_feature_len = 1,
                  create_for_train = True,
                  all_train = True,
@@ -228,6 +229,7 @@ class VoiceLoader(DataLoader):
         :param cut_sub: 选取子数据集进行训练，验证小数据集上的拟合效果
             注意，是先选取子数据集，再shuffle，文件的读取顺序相同则每次都会取到相同的文件
             如果有其他用途，请自行在构建类前打乱
+        :param padding:是否对齐
         :param sil_mode: 用来决定blank的padding时的index，具体参考 util.pinyin_map.PinyinMapper,默认为0
         :param divide_feature_len: 如果有池化层，一层池化层相当于在原采样率的基础上再进行一次采样，因此在这里手动除长度
                 该方法一来在直觉上符合特征提取规律，另一方面用于保证最大标签长度不会超过ctc解码时的特征长度
@@ -265,7 +267,7 @@ class VoiceLoader(DataLoader):
 
         self.create_for_train = create_for_train
         self.batch_size = batch_size
-        self.feature_pad_len = feature_pad_len
+        self.feature_pad_len = feature_pad_len if padding else None
         self.max_label_len = max_label_len
         self.n_mels = n_mels
 
@@ -308,10 +310,11 @@ class VoiceLoader(DataLoader):
         feature_len = np.array(
             [x.shape[-1] // divide for x in xs])  # 在padding前先将每个样本的time求得，用于求解之后的ctc_loss
 
-        xs = [pad_sequences(f, feature_pad_len,
-                            dtype="float32",
-                            padding="post",
-                            truncating="post") for f in xs]
+        if feature_pad_len is not None:
+            xs = [pad_sequences(f, feature_pad_len,
+                                dtype="float32",
+                                padding="post",
+                                truncating="post") for f in xs]
 
         xs = np.stack(xs)  # [batch,feature_num,max_time_stamp]
         xs = np.transpose(xs, [0, 2, 1])  # [batch,max_tim_stamp,feature_num]

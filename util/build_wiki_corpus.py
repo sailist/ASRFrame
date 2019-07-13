@@ -130,7 +130,7 @@ def build(root_path, output_dir):
         wikifs.extend(wikif)
     count = 0
     for i, fn in enumerate(wikifs):
-        if i < 6:
+        if i < 636:
             continue
         cut_iter = cut_wikifile(fn)
         fpath = os.path.join(output_dir, f"{i}.txt")

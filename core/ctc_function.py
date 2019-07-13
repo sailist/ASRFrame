@@ -66,6 +66,7 @@ class CTC_Batch_Cost():
 
         y_pred = tf.log(tf.transpose(y_pred, perm=[1, 0, 2]) + 1e-7)
 
+        # 注意这里的True是为了忽略解码失败的情况，此时loss会变成nan直到下一个个batch
         return tf.expand_dims(ctc.ctc_loss(inputs=y_pred,
                                            labels=sparse_labels,
                                            sequence_length=input_length,

@@ -1,5 +1,7 @@
 from acoustic import *
 from acoustic import DCNN2D
+from acoustic.MAXM import MCONM
+from acoustic.WAVE import WAVEM
 from util.reader import *
 from feature.mel_feature import MelFeature5
 from util.mapmap import PinyinMapper
@@ -90,6 +92,7 @@ def train_dcbnn1d(datagenes:list, load_model = None):
                           pymap=pymap,
                           melf=MelFeature5(),
                           divide_feature_len=8,
+                          all_train=False,
                           )
 
     model_helper = DCBNN1D(pymap)
@@ -100,6 +103,63 @@ def train_dcbnn1d(datagenes:list, load_model = None):
         model_helper.load(load_model)
 
     model_helper.fit(vloader,epoch=-1,save_step=1000,use_ctc=True)
+
+
+def train_wavenet(datagenes:list,load_model = None):
+    w,h = None,200
+    max_label_len = 64
+
+    dataset = VoiceDatasetList()
+    x_set, y_set = dataset.merge_load(datagenes)
+    pymap = PinyinMapper(sil_mode=-1)
+    vloader = VoiceLoader(x_set, y_set,
+                          batch_size=16,
+                          feature_pad_len=w,
+                          n_mels=h,
+                          max_label_len=max_label_len,
+                          pymap=pymap,
+                          melf=MelFeature5(),
+                          divide_feature_len=8,
+                          all_train=False,
+                          )
+
+    model_helper = WAVEM(pymap)
+    model_helper.compile(feature_shape=(w, h), label_max_string_length=max_label_len,
+                         ms_output_size=pymap.max_index + 1)
+
+    if load_model is not None:
+        load_model = os.path.abspath(load_model)
+        model_helper.load(load_model)
+
+    model_helper.fit(vloader, epoch=-1, save_step=1000, use_ctc=True)
+
+def train_mconm(datagenes:list, load_model = None):
+
+    w, h = 800, 200
+    max_label_len = 64
+
+    dataset = VoiceDatasetList()
+    x_set, y_set = dataset.merge_load(datagenes)
+    pymap = PinyinMapper(sil_mode=-1)
+    vloader = VoiceLoader(x_set, y_set,
+                          batch_size= 16,
+                          feature_pad_len = w,
+                          n_mels=h,
+                          max_label_len=max_label_len,
+                          pymap=pymap,
+                          melf=MelFeature5(),
+                          all_train=False
+                          )
+
+    model_helper = MCONM(pymap)
+    model_helper.compile(feature_shape=(w, h), label_max_string_length=max_label_len, ms_output_size=pymap.max_index+1)
+
+    if load_model is not None:
+        load_model = os.path.abspath(load_model)
+        model_helper.load(load_model)
+
+    model_helper.fit(vloader,epoch=-1,save_step=1000,use_ctc=True)
+
 
 def train_dcbann1d(datagenes:list, load_model = None):
     w, h = 1600, 200

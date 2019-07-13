@@ -11,6 +11,16 @@
 
 目前声学部分拼音识别准确率已经比较高了，但语言模型仍然存在诸多问题需要解决，因此开源该项目，希望大家群策群力，将它的效果进行提升。
 
+# 本项目的优点
+- 数据接口易于使用，常用的几个数据集已经实现了接口，只需要下载，解压，在配置文件中更改路径后，即可运行清洗方法，并自动获取所有音频和标注
+- 模型类已经写好，只需要关注模型结构，并保证输入输出格式，之后只需不到10行代码即可完成自动保存、训练
+- 集成了目前的几个开源项目中的模型，并训练了相应的模型文件
+- 较为详细的注释和清晰的代码，易于学习和修改
+
+# 本项目的缺点
+- 识别率仍然是一个大痛点，语音到拼音的识别能有大概80%以上的识别率（不过即使识别错了，也能保证是音近字），但存在100%识别正确的可能，拼音到汉字可能会更低，但也存在100%识别正确的可能，这跟环境、语速、玄学有关
+- 封装的有点太死了，如果要把模型取出来单独用可能会比较麻烦
+
 # 部署方法
 本项目仅需Python及其相关依赖包即可，省时省力，同时在realease中我提供了预训练的权重
 
@@ -173,20 +183,19 @@ python run_real_predict.py
 python run_ui.py
 ```
 
-# 项目内容
-为了更好的理解项目架构，在这里做一些介绍
-## 本项目的优点
-- 数据接口易于使用，常用的几个数据集已经实现了接口，只需要下载，解压，在配置文件中更改路径后，即可运行清洗方法，并自动获取所有音频和标注
-- 模型类已经写好，只需要关注模型结构，并保证输入输出格式，之后只需不到10行代码即可完成自动保存、训练
-- 集成了目前的几个开源项目中的模型，并训练了相应的模型文件
-- 较为详细的注释和清晰的代码，易于学习和修改
+### 预训练模型的使用
+预训练的权重我放到release中了，
 
-## 体系架构介绍
-acoustic下是声学模型
+- 声学模型部分效果最好的模型是DCBNN1D,模型名称`DCBNN1D_cur_best.h5`
+- 语言模型部分目前效果最好的模型是SOMMalpha,预训练权重文件`SOMMalpha_step_18000.h5`
+
+# 体系架构介绍
+为了更好的理解项目架构，在这里做一些介绍
+## acoustic：声学模型
 - Reader是读取各种数据集，和数据生成器的类
 - 其他py文件是各自的模型，调用通用的接口，compile、save、load、fit
 
-core下是各种模型用到的层，包括：
+## core：各种模型用到的层
 - attention（好像不是很好用，不清楚是不是哪里实现错误了，求大佬看一下）
 - positional embedding层（Transformer里的那个）
 - ctc，包括求loss和decode方法的封装
@@ -195,20 +204,20 @@ core下是各种模型用到的层，包括：
 - muti_gpu（据说是可以真正的多gpu并行运算，我没有试）
 - base_model（基类，实现自己的模型如果按照基类的规范写，会非常的容易，只需要搭起模型，数据集和训练的过程完美的封装好了）
 
-examples下是各种封装好的示例，包括：
+## examples：各种封装好的示例
 - 数据集清洗（dataset_clean.py)
 - 数据集统计（dataset_summary.py)
 - 模型训练
 - 真实使用测试
 
-feature下是特征提取方法，实现了基于batch的提取
+## feature：特征提取方法，实现了基于batch的提取
 - 目前，MelFeature5是最好的实现，参考的[ASRT](https://github.com/nl8590687/ASRT_SpeechRecognition)这个项目的实现
 
-language下是语言模型实现，目前实现进度：
+## language：语言模型实现，目前实现进度：
 - 一个简单的卷积网络（效果不好，废弃
 - 基于Somiao输入法的架构构建的简化版（我称之为SOMM），分为两种粒度（字母级和拼音级），目前效果最好的是SOMMalpha，但仍然不能投入使用
 
-util下是各种工具，包括：
+## util：各种工具，包括：
 - cleaner：清洗数据，包括上文提到的5种数据集的清洗代码，运行后会清洗为可供本项目内所有模型读取的统一格式
 - mapmap：里面提供了三类字典，分别是拼音-index、字母-index、汉字-index，可以互相转换，支持字、list、batch三个级别的转换
 - number_convert：用于阿拉伯数字到汉字的转换，复制的网上的代码，可读性可能不是很好...而且一些数字支持的不是很好
@@ -218,38 +227,79 @@ util下是各种工具，包括：
 - audiotool：音频工具，提供了录音、去噪、端点检测三个类
 - 其他：一些小工具，一般是临时使用的...就不写了
 
-visualization下是可视化工具，用来提供一个UI工具
+## visualization：可视化工具，用来提供一个UI工具
 - 可读性可能有点差，但实际上功能比较齐全
 
-jointly 下是联合训练模型，从语音->汉字的端到端模型
+## jointly：联合模型，对声学模型和语言模型的封装
+- DCHMM：DCBNN1D+HMM(Pinyin2Hanzi)
+- DCSOM：DCBNN1D+SOMM
 
 
-## 预训练模型的使用
-声学模型部分效果最好的模型是DCBNN1D,模型名称`DCBNN1D_cur_best.h5`
-语言模型部分目前效果最好的模型是SOMMalpha,预训练权重文件`SOMMalpha_step_18000.h5`
-
-## 结果展示
-在吐字清洗，语速正常，普通话标注你的情况下，部分识别效果还是可以的，以及拼音大部分都能识别正确
+# 结果展示
+在吐字清洗，语速正常，普通话标注你的情况下，部分识别效果还是可以的，以及拼音大部分都能识别正确，但是语言模型还比较的差
 
 ![image/ui.png](image/ui.png)
 
-### 声学模型部分
-对于thchs30语料,dcbnn1d大概在将全部语料迭代训练100次的时候会拟合
-![image/thchs30-DCBNN1Dplus_step_79420.png](image/thchs30-DCBNN1Dplus_step_79420.png)
+## 声学模型部分
+### DCBNN1D
+直白的讲，我都没有想到我的这个模型效果会这么好，当初真的是非常惊喜的。
 
-其余单个语料丢进去后，仍然能有较好的训练结果，但没有办法完全拟合，大概loss会降到10或者更低，这取决于数据的质量
-![image/DCBNN1D_epoch_43_step_43000.png](image/DCBNN1D_epoch_43_step_43000.png)
+对于thchs30语料,dcbnn1d大概在batchsize=16,step=1000,epoch=100的时候会拟合,此时loss会下降到3.5左右，准确率会上升到近97%
+这种情况算是过拟合，拿这个模型实际使用的话效果会很差(作为比对我把它命名为`overfit_thchs_DCBNN1D.h5`)，毕竟清华的数据集同质性太高了
+![image/thchs30_DCBNN1D_epoch_88_step_88000.png](image/thchs30_DCBNN1D_epoch_88_step_88000.png)
+![image/thchc_DCBNN1d_test_result.png](image/thchc_DCBNN1d_test_result.png)
 
-### 语言模型部分
-对于语言模型，基本能很低的loss，并且如果有针对性的测试，能得到一个比较好的结果，但缺点就是由于时间关系，语料不足，因此还没有达到极限
+不过因为是过拟合，所以我把在清华数据集上的效果作为baseline来测试我的其他模型（连清华数据集都过拟合不了，更谈不上泛化了）
+
+在将其余用到的数据集全部丢进去后，仍然能有较好的训练结果，但没有办法完全拟合，大概loss会降到15左右，此时得到了release中提供的`DCBNN1D_cur_best.h5`
+![image/all5_DCBNN1D_epoch_13_step_13000.png](image/all5_DCBNN1D_epoch_13_step_13000.png)
+
+在听说aishell数据集质量不高后，去掉AiShell后又训练了
+
+**截至2019年7月13日13:30:11，还在跑，在全部数据集上的loss降到了15左右，准确率稳定在75%**
+
+### MCONM
+这个是反向应用，在发现somiao输入法的结构非常好用后，我将其迁移到了声学模型部分来，搭建了这样的一个模型
+
+**截至2019年7月13日13:29:29，还在跑，在thchs30的数据集上loss降到了55后再下降变得有些困难，正确率大概只有55%**
+
+
+### WAVEM(wavenet)
+wavenet的迁移版，参考了网上一个TensorFlow的开源实现，链接在参考链接中提供了。
+
+**目前还没有跑过，等待更新**
+
+### LAS(Listen,Attend and Spell)
+该模型的思想来源于《Listen,Attend and Spell》这篇文章，借鉴了其中的Listener结构，我将其迁移到了keras上，这也是我最初尝试的有一定效果的模型
+
+具体情况嘛...在小数据上这个模型确实拟合的很好，但是扩大数据量就会抓瞎，猜测是因为时长过长的原因，另外我也没有加入Attention结构。
+
+目前该模型已经停止维护，**相关训练代码不保证能够跑通**
+
+
+
+## 语言模型部分
+### SOMM
+该模型其实是参考了somiao输入法，借鉴了其网络结构的keras版，原版本有七百多万个参数，我去掉了其中的GRU，并减少了其中的拼接层数，将参数量减少到了三百万以内，发现仍然有很好的效果。
+
+具体实现上，我分为了SOMMalpha和SOMMword，分别接收字母和拼音。
 
 ![image/SOMM_epoch_92_step_46000.png](image/SOMM_epoch_92_step_46000.png)
 
 ![image/SOMMalpha_epoch_77_step_38500.png](image/SOMMalpha_epoch_77_step_38500.png)
 
-## 参考资料
+同时如果针对声学模型识别的错误拼音有计划的增加噪音，联合模型的效果可能会更好，目前我还没有尝试
 
-**github项目：**
+### 其他模型
+- 我试过把声学模型部分的DCBNN1D直接迁移过来，但是失败了，这应该是只有卷积导致感受野太大而时间序列太短的原因，人一眼看一个句子也理解不了嗯...
+
+- 另外在搜寻中发现了一个开源库Pinyin2Hanzi，我把其中的参数和代码直接拷贝过来封装了一下，有一定的效果，但是不好测试，参数对应的语料可能不是很足够。
+
+
+
+# 参考资料
+
+## github项目
 - 中华新华字典数据库：https://github.com/pwxcoo/chinese-xinhua
 - 汉字拼音数据：https://github.com/mozillazg/pinyin-data
 - 词语拼音数据：https://github.com/mozillazg/phrase-pinyin-data
@@ -266,20 +316,22 @@ jointly 下是联合训练模型，从语音->汉字的端到端模型
 - 语音识别项目：https://github.com/libai3/masr
 - 语音识别项目：https://github.com/xxbb1234021/speech_recognition
 - 语音识别项目：https://github.com/nl8590687/ASRT_SpeechRecognition
+- 语音识别项目：https://github.com/Deeperjia/tensorflow-wavenet
 
-
-**论文：**
+## 论文
 - 《Language Modeling with Gated Convolutional Networks》：https://arxiv.org/abs/1612.08083
 - 《Attention Is All You Need》：https://arxiv.org/abs/1706.03762
 - 《Highway Networks》：https://arxiv.org/abs/1505.00387
 - 《Fast and Accurate Entity Recognition with Iterated Dilated Convolutions》：https://arxiv.org/abs/1702.02098
 - 《Connectionist Temporal Classification: Labelling Unsegmented Sequence Data with Recurrent Neural Networks》:http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.75.6306&rep=rep1&type=pdf
+- 《Listen, Attend and Spell》：https://arxiv.org/abs/1508.01211
+- 《WaveNet: A Generative Model for Raw Audio》：https://arxiv.org/abs/1609.03499
 
-## 可能存在的问题（持续更新ing）
-### 关于轻声的处理方案
+# 可能存在的问题（持续更新）
+## 关于轻声的处理方案
 在字典中，轻声是没有5的标注的，但是存在一些数据集提前标注好了拼音（如thchs30）存在标注5的问题，因此我在相应的类中做了一点处理，如果拼音中有5会先将5去掉。即'de''de5'是一视同仁的
 
-### 关于拼音和汉字字典的选择
+## 关于拼音和汉字字典的选择
 拼音字典是从ASRT中获得的一个字典，删除了所有汉字，并且在选择的5个数据集中全部测试过，添加了注音中没有涉及过的一些音，包括
 ```text
 "di"(弟弟)
@@ -327,13 +379,41 @@ wen2 kou3 cheng1 na1 mo2 e1 mi2 tuo2 fo2 gui1 dui4 yue1 shi1 fu ceng2 ji4 fou3
 
 ```
 
-以及`clear_unavai.sh`脚本中提到的语料，如果不删除，可能会报错，建议将脚本中的路径更改后，运行删除这些语料
+以及`clear_unavai.sh`脚本中提到的语料，大多存在一些比较奇葩的罕见词，如果不删除，可能会报错，建议将脚本中的路径更改后，运行删除这些语料
 
 > 这些语料中大多是一些非常见词，食之无味弃之可惜，个人认为删掉为好
 
-### SOMM模型停止训练
-由于未知的原因，训练大概50000个batch的时候会报错停止，因为没有错误代码提示（core dump），不清楚问题具体原因，因此这里提供的解决方案就是以预训练的模型为基础，继续训练
+## SOMM模型停止训练
+由于未知的原因，SOMM模型训练大概50000个batch的时候会报错停止，因为没有错误代码提示（core dump），不清楚问题具体原因，因此这里提供的解决方案就是以预训练的模型为基础，继续训练
 
 不过这样有一个问题，因为语言模型的训练是从一个大语料文件里读取，因此重新训练就要从头读取，这样可能会导致后面的语料训练不到
 
-因此推荐将语料分割为小语料，linux下可以使用split命令进行分割，这里不再具体介绍
+因此推荐将语料分割为小语料，这样可以训练全语料，linux下可以使用split命令进行分割，这里不再具体介绍
+
+
+# TODO list
+- 音素字典的建立，以音素为粒度训练模型
+- 根据声学模型为语言模型的语料添加随机噪音
+- 其他模型的尝试
+- TextLoader代码的完善
+- UI代码可读性增强
+- 语言识别服务器部署
+
+
+
+# 写在最后
+这个项目我从2019年5月22日开始断断续续的查阅一些资料，从2019年6月19日正式开始，与2019年7月13日落下尾声，这个项目目前仍然有一些问题，即我在TODO list中写的，但我仍然认为这是我的所有项目中最好的一个。
+
+我是很崇尚开源的，虽然我确实也萌生出将这个项目去卖一两个钱，毕竟我目前还在读大三，还没有稳定的收入，但我权衡后，还是发现，可能还是开源更适合这个项目，于是最终我还是将其开源。
+
+目前语音识别开源环境确实很差，尤其是在Python语言中，因此我希望我的这个项目能为语音识别这个开源环境做出一些细微的贡献，能给有需要的人提供一些帮助。如果这个目的能达成，那我就很开心了。
+
+
+欢迎大家提issue，我如果能回答会尽量回复的！另外我建立了一个项目交流群，群号：566836462，欢迎想交流语音识别、机器学习、深度学习的朋友加入！
+
+最后，如果大家想打赏，可以请我喝一杯咖啡或者奶茶（嘿），我也会有更大的积极性持续更新该项目：
+
+![image/alpay.jpg](image/alpay.jpg)
+![image/wxpay.jpg](image/wxpay.jpg)
+
+

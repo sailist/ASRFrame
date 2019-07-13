@@ -12,6 +12,11 @@ wiki = TextDataGenerator(config.wiki_datapath)
 
 config.model_dir = "./model/"
 
+'''用于强行使用CPU训练'''
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = ""
+
+
 '''语言模型——————————————————————————————————————————————————————————————————————————————————'''
 
 '''基本没什么效果，卷着卷着就卷没了'''
@@ -25,16 +30,19 @@ config.model_dir = "./model/"
 
 '''声学模型——————————————————————————————————————————————————————————————————————————————————'''
 
+'''新搭建的一个尝试，希望能保留更多尺度上的信息'''
+# aexample.train_mconm([thchs],config.join_model_path("./acoustic/MCONM_step_21000.h5"))
+
 '''目前最有效的模型'''
-# aexample.train_dcbnn1d([z200], config.join_model_path("./acoustic/SOMMalpha_step_45500.h5"))
-# aexample.train_dcbnn1d([thchs,z200,prime,aishell,stcmd]
-#                   ,load_model=config.join_path("DRModel_step_45000.h5"))
+# aexample.train_dcbnn1d([thchs], config.join_model_path("./DCBNN1D_step_326000.h5"))
+aexample.train_dcbnn1d([thchs,z200,prime,stcmd]
+                  ,load_model=config.join_model_path("./acoustic/DCBNN1D_step_13000.h5"))
 
 
 '''2019年7月2日08:34:19，开始尝试'''
 '''目前来看效果反而没有dcbnn1d好，如果添加残差结构可能会好一些'''
-aexample.train_dcbnn1dplus([thchs,z200,stcmd,aishell,prime],
-                           load_model=None)
+# aexample.train_dcbnn1dplus([thchs,z200,stcmd,aishell,prime],
+#                            load_model=None)
 
 
 '''2019年7月2日08:34:14，效果不好，停止训练，具体情报参考类下的注释'''

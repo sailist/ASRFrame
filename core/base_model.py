@@ -17,6 +17,7 @@ from util import PinyinMapper
 from util.mapmap import ChsMapper
 from util.audiotool import Recoder, NoiseFilter, VadExtract
 from feature.mel_feature import MelFeature5
+import re
 
 class BaseModel():
     '''
@@ -31,6 +32,8 @@ class BaseModel():
         self.evaluate = EvaluateDistance()
         self.train_model = None
         self.base_model = None
+        self.re_epoch = re.compile("epoch_([0-9]+)")
+        self.pre_epoch = 0
 
     def built(self,train_mode:Model,base_model:Model):
         train_mode.summary()
@@ -41,7 +44,7 @@ class BaseModel():
         self.model_built = True
         print('[Info] Create Model Successful, Compiles Model Successful.')
 
-    def save(self,dir_path = None,fn=None):
+    def save(self,dir_path = None,fn=None,epoch = None,step = None):
         '''
         :param dir_path: the model storeed path, if path not existed, it will be created
             so you have no need to check whether the dir is existed.
@@ -51,27 +54,33 @@ class BaseModel():
         :return:
         '''
         assert self.model_built, "model have not built, please excute compile() method to build the model."
+
         if dir_path is None:
             dir_path = config.model_dir
 
         os.makedirs(dir_path, exist_ok=True)
-        if fn is None:
-            fn = "trans_model.h5"
-
-        if isinstance(fn,int):
-            fn = f"{self.__class__.__name__}_step_{fn}.h5"
+        if fn is None and (epoch is None and step is None):
+            fn = f"{self.__class__.__name__}.h5"
+        elif epoch is not None and step is not None:
+            fn = f"{self.__class__.__name__}_epoch_{epoch}_step_{step}.h5"
 
         save_path = os.path.join(dir_path, fn)
         self.train_model.save(save_path)
-        print(f"saved model, model name:{fn}")
+        print(f"saved model, model name:{save_path}")
 
-    def load(self, path):
+    def load(self, path:str):
         '''
         load the model weight, please be sure excuting compile() method before load().
         :param path: the path of the model file
         :return:
         '''
         assert self.model_built, "model have not built, please excute compile() method to build the model."
+
+        # self.pre_epoch = 0
+        match_epoch = re.search(self.re_epoch,path)
+        if match_epoch is not None:
+            self.pre_epoch = int(match_epoch.group(1))
+            print(f"Load per-trained model with epoch {self.pre_epoch}.")
         self.train_model.load_weights(path)
         self.base_model.load_weights(path)
 
@@ -174,6 +183,46 @@ class BaseModel():
 
         return conv1
 
+    def conv1d_layers(self,x,h_dim,layer_num = 16,batch_norm = False):
+        '''
+        Somiao输入法中的一个结构，据说参考了IDCNN，我发现这个结构可以同时用到声学和语言模型上因此放到基类中
+        :param x:
+        :param h_dim:
+        :param layer_num:
+        :param batch_norm:
+        :return:
+        '''
+        embs = Conv1D(h_dim,kernel_size=1,padding="same")(x)#[emb/2]
+        for i in range(2,layer_num+1):
+            if batch_norm:
+                emb = BatchNormalization()(Conv1D(h_dim,kernel_size=i,padding="same")(x))
+            else:
+                emb = Conv1D(h_dim,kernel_size=i,padding="same")(x) #[emb/2]
+            embs = Concatenate()([embs,emb]) # axis = -1#[emb]+[emb//2]
+        embs = BatchNormalization()(embs) #[emb]
+
+        return embs
+
+    def hignway_netblock(self,x,h_dim):
+        H = Dense(h_dim,activation="relu")(x)
+        T = Dense(h_dim,activation="sigmoid",kernel_initializer=Constant(value=-1))(x)
+
+        C = Lambda(lambda x:1-x)(T)
+
+        A = Multiply()([H,T])
+        B = Multiply()([x,C])
+        outputs = Add()([A,B])
+
+        return outputs
+
+    def parent(self,ipt,h_dim,drop_out_rate = 0.5):
+        emb = Dense(h_dim)(ipt)
+        emb = Dropout(rate=drop_out_rate)(emb)
+        emb = Dense(h_dim//2)(emb)
+        emb = Dropout(rate=drop_out_rate)(emb)
+        return emb
+
+
 class AcousticModel(BaseModel):
     '''继承自BaseModel，用于训练声学模型，主要区别在于save时候目录存放位置和fit、predict、test方法不同'''
     def __init__(self,pymap):
@@ -182,10 +231,10 @@ class AcousticModel(BaseModel):
         self.pysets = set()
         self.ctc_decoder = CTCDecode()
 
-    def save(self, dir_path=None, fn=None, latest=3):
+    def save(self,dir_path = None,fn=None,epoch = None,step = None):
         if dir_path is None:
             dir_path = config.acoustic_model_dir
-        super().save(dir_path, fn)
+        super().save(dir_path,fn,epoch,step)
 
     def fit(self, voice_loader:VoiceLoader, epoch = 100, save_step = 500,use_ctc = False):
         '''
@@ -200,8 +249,8 @@ class AcousticModel(BaseModel):
 
         self.pymap = voice_loader.pymap
 
-        i = -1
-        self.save(fn=(i+1)*save_step)
+        i = self.pre_epoch
+        self.save(epoch=0,step=0)
         self.test(voice_loader.choice(), use_ctc=use_ctc)
 
         logg_plot = Lossplot(self.__class__.__name__, save_dir=config.acoustic_loss_dir)
@@ -212,7 +261,7 @@ class AcousticModel(BaseModel):
             self.train_model.fit_generator(voice_loader,save_step,callbacks=[logg_plot,time_clock])
 
             self.test(voice_loader.choice_test(), use_ctc=use_ctc)
-            self.save(fn=(i+1)*save_step)
+            self.save(epoch=i,step=i*save_step)
 
     def predict(self, batch, use_ctc = True,return_ctc_prob = False):
         '''
@@ -302,8 +351,8 @@ class AcousticModel(BaseModel):
                         errlist.append(b)
                         print(a,b)
             else:
-                print(" ".join(pred))
-                print(" ".join(true))
+                # print(" ".join(pred))
+                # print(" ".join(true))
                 ignore_num+=1
 
 
@@ -337,10 +386,11 @@ class LanguageModel(BaseModel):
         super().__init__()
         self.chs_map = ChsMapper()
 
-    def save(self, dir_path=None, fn=None):
+    def save(self,dir_path = None,fn=None,epoch = None,step = None):
         if dir_path is None:
             dir_path = config.language_model_dir
-        super().save(dir_path, fn)
+        super().save(dir_path, fn,epoch,step)
+
 
     def fit(self, txt_loader:[TextLoader,TextLoader2], epoch = 100, save_step = 500):
         '''
@@ -354,8 +404,8 @@ class LanguageModel(BaseModel):
         # viter = voice_loader.create_feature_iter(shuffle_set=False)
 
 
-        i = -1
-        self.save(fn=(i+1)*save_step)
+        i = 0
+        self.save(epoch=0,step=0)
         self.test(txt_loader.choice())
 
         logg_plot = Lossplot(self.__class__.__name__,save_dir=config.language_loss_dir)
@@ -366,7 +416,7 @@ class LanguageModel(BaseModel):
             self.train_model.fit_generator(txt_loader, save_step, callbacks=[logg_plot, time_clock])
 
             self.test(txt_loader.choice())
-            self.save(fn=(i+1)*save_step)
+            self.save(epoch=i, step = i*save_step)
             # self.save_loss_plot(None) # TODO 实现损失曲线的绘制，每个模型一个，覆盖原图片，默认保存在 ./loss_plot 下
 
     def test(self,batch):
@@ -450,14 +500,7 @@ class LanguageModel(BaseModel):
         emb = Dropout(rate=drop_out_rate)(emb)
         return emb
 
-    def conv1d_layers(self,x,h_dim,layer_num = 16):
-        embs = Conv1D(h_dim,kernel_size=1,padding="same")(x)#[emb/2]
-        for i in range(2,layer_num+1):
-            emb = Conv1D(h_dim,kernel_size=i,padding="same")(x) #[emb/2]
-            embs = Concatenate()([embs,emb]) # axis = -1#[emb]+[emb//2]
-        embs = BatchNormalization()(embs) #[emb]
 
-        return embs
 
 class BaseJoint():
     '''
