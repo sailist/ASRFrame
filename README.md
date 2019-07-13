@@ -246,7 +246,9 @@ python run_ui.py
 
 对于thchs30语料,dcbnn1d大概在batchsize=16,step=1000,epoch=100的时候会拟合,此时loss会下降到3.5左右，准确率会上升到近97%
 这种情况算是过拟合，拿这个模型实际使用的话效果会很差(作为比对我把它命名为`overfit_thchs_DCBNN1D.h5`)，毕竟清华的数据集同质性太高了
+
 ![image/thchs30_DCBNN1D_epoch_88_step_88000.png](image/thchs30_DCBNN1D_epoch_88_step_88000.png)
+
 ![image/thchc_DCBNN1d_test_result.png](image/thchc_DCBNN1d_test_result.png)
 
 不过因为是过拟合，所以我把在清华数据集上的效果作为baseline来测试我的其他模型（连清华数据集都过拟合不了，更谈不上泛化了）
@@ -413,7 +415,6 @@ wen2 kou3 cheng1 na1 mo2 e1 mi2 tuo2 fo2 gui1 dui4 yue1 shi1 fu ceng2 ji4 fou3
 
 最后，如果大家想打赏，可以请我喝一杯咖啡或者奶茶（嘿），我也会有更大的积极性持续更新该项目：
 
-![image/alpay.jpg](image/alpay.jpg)
-![image/wxpay.jpg](image/wxpay.jpg)
+![image/alpay.jpg](image/alpay.jpg) ![image/wxpay.jpg](image/wxpay.jpg)
 
 
