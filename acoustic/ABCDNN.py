@@ -1,7 +1,8 @@
-'''
-A(Attention) B(Batchnorm) C(Conv) D(Deep) NN(nerual network), hhhhh...
-'''
 from keras.models import Model
+from util.reader import VoiceDatasetList,VoiceLoader
+from util.mapmap import PinyinMapper
+from feature.mel_feature import MelFeature5
+import os
 from keras.layers import Dense, Dropout, Input, Multiply, Conv2D, MaxPooling2D
 from keras.layers import Activation
 from core import AcousticModel, CTC_Batch_Cost
@@ -116,6 +117,31 @@ class DCNN2D(AcousticModel):
 
         self.built(train_model,base_model)
 
+    @staticmethod
+    def train(datagenes: list, load_model=None):
+        w, h = 1600, 200
+
+        dataset = VoiceDatasetList()
+        x_set, y_set = dataset.merge_load(datagenes)
+
+        pymap = PinyinMapper(sil_mode=-1)
+        vloader = VoiceLoader(x_set, y_set,
+                              batch_size=16,
+                              n_mels=h, feature_pad_len=w, feature_dim=3,
+                              pymap=pymap,
+                              melf=MelFeature5(),
+                              divide_feature_len=8, )
+
+        model_helper = DCNN2D(pymap)
+        model_helper.compile(feature_shape=(w, h, 1),
+                             ms_output_size=pymap.max_index + 1)  # ctcloss 计算要求： index < num_class-1
+
+        if load_model is not None:
+            load_model = os.path.abspath(load_model)
+            model_helper.load(load_model)
+
+        model_helper.fit(vloader, epoch=-1, use_ctc=True)
+
 class DCBNN2D(AcousticModel):
     '''from https://github.com/audier/DeepSpeechRecognition
     2d卷积+maxpool+batchnorm，但效果不如1d的好，参数量也比1d的大
@@ -146,6 +172,25 @@ class DCBNN2D(AcousticModel):
         base_model = Model(audio_ipt,y_pred)
 
         self.built(train_model,base_model)
+
+    @staticmethod
+    def train(datagenes:list, load_model = None):
+        w,h = 1600,200
+
+        dataset = VoiceDatasetList()
+        x_set, y_set = dataset.merge_load(datagenes)
+
+        pymap = PinyinMapper(sil_mode=-1)
+        vloader = VoiceLoader(x_set,y_set,batch_size=16,n_mels=h,feature_pad_len=w,feature_dim=3,cut_sub=32)
+
+        model_helper = DCBNN2D(pymap)
+        model_helper.compile(feature_shape=(w,h,1),label_max_string_length=32,ms_output_size=1423)
+
+        if load_model is not None:
+            load_model = os.path.abspath(load_model)
+            model_helper.load(load_model)
+
+        model_helper.fit(vloader)
 
 class DCBNN1D(AcousticModel):
     '''当前（2019年7月1日）效果最好的一个模型,1d卷积+maxpool+batchnorm'''
@@ -179,8 +224,37 @@ class DCBNN1D(AcousticModel):
 
         self.built(train_model,base_model)
 
+    @staticmethod
+    def train(datagenes: list, load_model=None):
+        w, h = 1600, 200
+        max_label_len = 64
+
+        dataset = VoiceDatasetList()
+        x_set, y_set = dataset.merge_load(datagenes)
+        pymap = PinyinMapper(sil_mode=-1)
+        vloader = VoiceLoader(x_set, y_set,
+                              batch_size=16,
+                              feature_pad_len=w,
+                              n_mels=h,
+                              max_label_len=max_label_len,
+                              pymap=pymap,
+                              melf=MelFeature5(),
+                              divide_feature_len=8,
+                              all_train=False,
+                              )
+
+        model_helper = DCBNN1D(pymap)
+        model_helper.compile(feature_shape=(w, h), label_max_string_length=max_label_len,
+                             ms_output_size=pymap.max_index + 1)
+
+        if load_model is not None:
+            load_model = os.path.abspath(load_model)
+            model_helper.load(load_model)
+
+        model_helper.fit(vloader, epoch=-1, save_step=1000, use_ctc=True)
+
 class DCBNN1Dplus(AcousticModel):
-    '''在DCBNN1D的基础上叠加卷积层，目前训练结果来看效果没有DCBNN1D好，可能训练次数不够，欠拟合'''
+
     def compile(self,feature_shape = (1024,200),label_max_string_length = 32,ms_output_size = 1423):
         audio_ipt = Input(name="audio_input", shape=feature_shape)
         layer_h1 = self.cnn1d_cell(32, audio_ipt,pool=True,reshape=False)
@@ -215,11 +289,36 @@ class DCBNN1Dplus(AcousticModel):
 
         self.built(train_model,base_model)
 
+    @staticmethod
+    def train(datagenes:list, load_model = None):
+        w, h = 1600, 200
+        max_label_len = 64
+        batch_size = 16
+
+        dataset = VoiceDatasetList()
+        x_set, y_set = dataset.merge_load(datagenes)
+        pymap = PinyinMapper(sil_mode=-1)
+        vloader = VoiceLoader(x_set, y_set,
+                              batch_size= batch_size,
+                              feature_pad_len = w,
+                              n_mels=h,
+                              max_label_len=max_label_len,
+                              pymap=pymap,
+                              melf=MelFeature5(),
+                              all_train=True,
+                              divide_feature_len=8,)
+
+        model_helper = DCBNN1Dplus(pymap)
+        model_helper.compile(feature_shape=(w, h), label_max_string_length=max_label_len, ms_output_size=pymap.max_index+1)
+
+        if load_model is not None:
+            load_model = os.path.abspath(load_model)
+            model_helper.load(load_model)
+
+        # model_helper.fit(vloader,epoch=-1, save_step=len(x_set)//batch_size, use_ctc=True)
+        model_helper.fit(vloader,epoch=-1, save_step=len(x_set)//batch_size//30, use_ctc=True)
+
 class DCBANN1D(AcousticModel):
-    '''DRModel + Attention
-    2019年7月2日 初次结束尝试，193*1000 次迭代，在thchs30上没有拟合，表现远不如dcbnn1d
-    添加Attention后效果反而变差了？不清楚原因，时间不够，暂时停止训练该模型，转为dcbnn1dplus
-    '''
     def compile(self,feature_shape = (1024,200),label_max_string_length = 32,ms_output_size = 1423):
         audio_ipt = Input(name="audio_input", shape=feature_shape)
         layer_h1 = self.cnn1d_cell(32, audio_ipt,pool=True,reshape=False)
@@ -256,3 +355,31 @@ class DCBANN1D(AcousticModel):
 
         self.built(train_model,base_model)
 
+    @staticmethod
+    def train(datagenes: list, load_model=None):
+        w, h = 1600, 200
+        max_label_len = 64
+
+        dataset = VoiceDatasetList()
+        x_set, y_set = dataset.merge_load(datagenes)
+        pymap = PinyinMapper(sil_mode=-1)
+        vloader = VoiceLoader(x_set, y_set,
+                              batch_size=16,
+                              feature_pad_len=w,
+                              n_mels=h,
+                              max_label_len=max_label_len,
+                              pymap=pymap,
+                              melf=MelFeature5(),
+                              divide_feature_len=8,
+
+                              )
+
+        model_helper = DCBANN1D(pymap)
+        model_helper.compile(feature_shape=(w, h), label_max_string_length=max_label_len,
+                             ms_output_size=pymap.max_index + 1)
+
+        if load_model is not None:
+            load_model = os.path.abspath(load_model)
+            model_helper.load(load_model)
+
+        model_helper.fit(vloader, epoch=-1, save_step=1000, use_ctc=True)

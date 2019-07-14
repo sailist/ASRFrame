@@ -1,7 +1,10 @@
 import config
 from examples import train_language_model as lexample
-from examples import train_acoustic_model as aexample
 from util.reader import ST_CMDS,Thchs30,Primewords,AiShell,Z200,TextDataGenerator
+
+from acoustic.ABCDNN import DCBNN1D,DCBNN1Dplus
+from acoustic.MAXM import MPBCONM,MPCONM,MCONM
+from acoustic.WAVE import WAVEM
 
 stcmd = ST_CMDS(config.stcmd_datapath) # 据说还可以
 thchs = Thchs30(config.thu_datapath) # 同质性太高，不过好拟合，可以用来测试模型的效果，在这个数据上都没法得到比较好的结果的就没啥使用的必要了
@@ -14,7 +17,7 @@ config.model_dir = "./model/"
 
 '''用于强行使用CPU训练'''
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = ""
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 
 '''语言模型——————————————————————————————————————————————————————————————————————————————————'''
@@ -30,13 +33,17 @@ os.environ["CUDA_VISIBLE_DEVICES"] = ""
 
 '''声学模型——————————————————————————————————————————————————————————————————————————————————'''
 
-'''新搭建的一个尝试，希望能保留更多尺度上的信息'''
-# aexample.train_mconm([thchs],config.join_model_path("./acoustic/MCONM_step_21000.h5"))
+# aexample.train_mconm([thchs],config.join_model_path("./acoustic/MCONM_epoch_55_step_55000.h5"))
+
+
+MPCONM.train([thchs],config.join_model_path("./acoustic/MPCONM_epoch_27_step_27000.h5"))
+# WAVEM.train([thchs],)
 
 '''目前最有效的模型'''
+
 # aexample.train_dcbnn1d([thchs], config.join_model_path("./DCBNN1D_step_326000.h5"))
-aexample.train_dcbnn1d([thchs,z200,prime,stcmd]
-                  ,load_model=config.join_model_path("./acoustic/DCBNN1D_step_13000.h5"))
+# aexample.train_dcbnn1d([thchs,z200,prime,stcmd]
+#                   ,load_model=config.join_model_path("./acoustic/DCBNN1D_step_13000.h5"))
 
 
 '''2019年7月2日08:34:19，开始尝试'''

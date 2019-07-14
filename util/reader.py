@@ -212,7 +212,6 @@ class VoiceLoader(DataLoader):
                  cut_sub = None,vad_cut = True,
                  melf = None,
                  check = True,
-                 padding = True,
                  divide_feature_len = 1,
                  create_for_train = True,
                  all_train = True,
@@ -267,7 +266,7 @@ class VoiceLoader(DataLoader):
 
         self.create_for_train = create_for_train
         self.batch_size = batch_size
-        self.feature_pad_len = feature_pad_len if padding else None
+        self.feature_pad_len = feature_pad_len
         self.max_label_len = max_label_len
         self.n_mels = n_mels
 
@@ -297,7 +296,6 @@ class VoiceLoader(DataLoader):
     def _check_pading_avai(self):
         audio = np.random.rand(self.max_audio_len)
         feature = self.melf.mfcc(audio)
-        print(feature.shape)
         feature_len = feature.shape[1]//self.divide_feature_len
         assert feature_len <= self.feature_pad_len, f"feature padding len is {self.feature_pad_len},but feature timestamp is {feature_len}"
         assert feature.shape[0] == self.n_mels, f"feature dim should be {self.n_mels},but {feature.shape[0]}"

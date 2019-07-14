@@ -12,7 +12,7 @@ import config
 from core.position_embedding import Position_Embedding
 from core.glu import GatedConv1D
 from core.attention import Attention
-from util.callbacks import Lossplot,TimeClock
+from util.callbacks import Lossplot,TimeClock,LossReportor
 from util import PinyinMapper
 from util.mapmap import ChsMapper
 from util.audiotool import Recoder, NoiseFilter, VadExtract
@@ -80,7 +80,7 @@ class BaseModel():
         match_epoch = re.search(self.re_epoch,path)
         if match_epoch is not None:
             self.pre_epoch = int(match_epoch.group(1))
-            print(f"Load per-trained model with epoch {self.pre_epoch}.")
+            print(f"[info*]Load per-trained model with epoch {self.pre_epoch}.")
         self.train_model.load_weights(path)
         self.base_model.load_weights(path)
 
@@ -192,7 +192,11 @@ class BaseModel():
         :param batch_norm:
         :return:
         '''
+
         embs = Conv1D(h_dim,kernel_size=1,padding="same")(x)#[emb/2]
+        if batch_norm:
+            embs = BatchNormalization()(embs)
+
         for i in range(2,layer_num+1):
             if batch_norm:
                 emb = BatchNormalization()(Conv1D(h_dim,kernel_size=i,padding="same")(x))
@@ -222,6 +226,37 @@ class BaseModel():
         emb = Dropout(rate=drop_out_rate)(emb)
         return emb
 
+    @staticmethod
+    def train_templete(datagenes: list, load_model=None):
+        '''
+        训练方法的脚本模板，有详细的注释
+        :param datagenes: Datagene类的list，会由DatasetList加载，合并生成路径
+        :param load_model: 如果模型要加载模型的话，这里提供路径
+        '''
+        # w, h = 1600, 200  # 模型的input_shape
+        # dataset = VoiceDatasetList()  # 标准写法
+        # x_set, y_set = dataset.merge_load(datagenes)  # 直接传入，可以得到相应的数据集路径
+
+        # 因为sil_mode不同字典映射可能会有不同，因此Voiceloader/模型共用一个pymap，保证不会出现错误
+        # pymap = PinyinMapper(sil_mode=-1)
+
+        # 生成迭代器，最简单的写法，但如果这么写多半是跑不通的，需要改一些参数，具体可以看VoiceLoader的初始化方法
+        # vloader = VoiceLoader(x_set, y_set, pymap)
+
+        # 如果是自己写的模型，需要继承AcousticModel，随后在compile方法中定义自己的模型
+        # model_helper = AcousticModel(pymap)
+
+        # compile方法是自己写的，一般需要input的shape，特征的最大步长，拼音的最大序号，最大步长等参数
+        # 编写时参考一下其他模型的写法，注意接口的调用
+        # model_helper.compile()
+
+        # if load_model is not None:
+        #     load_model = os.path.abspath(load_model)
+        #     model_helper.load(load_model)
+
+        # model_helper.fit(vloader, epoch=-1, use_ctc=True)  # 固定写法，具体的含义看fit方法的注释
+        pass
+
 
 class AcousticModel(BaseModel):
     '''继承自BaseModel，用于训练声学模型，主要区别在于save时候目录存放位置和fit、predict、test方法不同'''
@@ -250,15 +285,18 @@ class AcousticModel(BaseModel):
         self.pymap = voice_loader.pymap
 
         i = self.pre_epoch
-        self.save(epoch=0,step=0)
+        if i == 0:
+            self.save(epoch=0,step=0)
         self.test(voice_loader.choice(), use_ctc=use_ctc)
 
-        logg_plot = Lossplot(self.__class__.__name__, save_dir=config.acoustic_loss_dir)
+        loss_plot = Lossplot(self.__class__.__name__, save_dir=config.acoustic_loss_dir)
+        loss_report = LossReportor()
         time_clock = TimeClock()
+
         while i<epoch or epoch == -1:
             i+=1
             print(f"train epoch {i}/{epoch}.")
-            self.train_model.fit_generator(voice_loader,save_step,callbacks=[logg_plot,time_clock])
+            self.train_model.fit_generator(voice_loader,save_step,callbacks=[loss_plot,time_clock,loss_report])
 
             self.test(voice_loader.choice_test(), use_ctc=use_ctc)
             self.save(epoch=i,step=i*save_step)
@@ -404,16 +442,19 @@ class LanguageModel(BaseModel):
         # viter = voice_loader.create_feature_iter(shuffle_set=False)
 
 
-        i = 0
-        self.save(epoch=0,step=0)
+        i = self.pre_epoch
+        if i == 0:
+            self.save(epoch=0,step=0)
         self.test(txt_loader.choice())
 
         logg_plot = Lossplot(self.__class__.__name__,save_dir=config.language_loss_dir)
+        loss_report = LossReportor()
         time_clock = TimeClock()
+
         while i<epoch or epoch == -1:
             i+=1
             print(f"train epoch {i}/{epoch}.")
-            self.train_model.fit_generator(txt_loader, save_step, callbacks=[logg_plot, time_clock])
+            self.train_model.fit_generator(txt_loader, save_step, callbacks=[logg_plot, time_clock,loss_report])
 
             self.test(txt_loader.choice())
             self.save(epoch=i, step = i*save_step)

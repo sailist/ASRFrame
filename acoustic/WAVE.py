@@ -1,4 +1,9 @@
 # wavenet 用于语音识别的keras实现，参考https://github.com/Deeperjia/tensorflow-wavenet/
+from util.reader import VoiceLoader,VoiceDatasetList
+from util.mapmap import PinyinMapper
+from feature.mel_feature import MelFeature5
+import os
+
 from core.base_model import AcousticModel
 from core.ctc_function import CTC_Batch_Cost
 from keras.layers import Input,Conv1D,BatchNormalization,SeparableConv1D,Activation,Multiply,Add
@@ -36,7 +41,33 @@ class WAVEM(AcousticModel):
 
         self.built(train_model, base_model)
 
+    @staticmethod
+    def train(datagenes: list, load_model=None):
+        w, h = 1600, 200
+        max_label_len = 64
 
+        dataset = VoiceDatasetList()
+        x_set, y_set = dataset.merge_load(datagenes)
+        pymap = PinyinMapper(sil_mode=-1)
+        vloader = VoiceLoader(x_set, y_set,
+                              batch_size=16,
+                              feature_pad_len=w,
+                              n_mels=h,
+                              max_label_len=max_label_len,
+                              pymap=pymap,
+                              melf=MelFeature5(),
+                              all_train=False,
+                              )
+
+        model_helper = WAVEM(pymap)
+        model_helper.compile(feature_shape=(w, h), label_max_string_length=max_label_len,
+                             ms_output_size=pymap.max_index + 1)
+
+        if load_model is not None:
+            load_model = os.path.abspath(load_model)
+            model_helper.load(load_model)
+
+        model_helper.fit(vloader, epoch=-1, save_step=100, use_ctc=True)
 
     def wave_residual_block(self,ipt,filters,kernal_size,rate):
         conv_out = self.dialted_conv(ipt,filters=filters,kernal_size=kernal_size,rate=rate,activation="tanh")

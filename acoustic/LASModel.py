@@ -2,6 +2,10 @@
 本文件内所有模型涉及LSTM，训练非常慢，目前只在小数据集上拟合过，无法保证其在大数据集上的效果
 '''
 from keras.models import Model
+import os
+from util.reader import VoiceLoader,VoiceDatasetList
+from util.mapmap import PinyinMapper
+from feature.mel_feature import MelFeature5
 from keras.layers import Conv1D,Dense, Dropout, Input, Reshape
 from keras.layers import Bidirectional,LSTM,Activation
 from core import AcousticModel,CTC_Batch_Cost
@@ -77,6 +81,34 @@ class LASModel(AcousticModel):
 
         self.built(train_model,base_model)
 
+    # @staticmethod
+    # def train_las(path,load_model = None):
+    #     '''
+    #     停止维护，2019年6月27日，时间有限没法清楚能否训练出来，以后有机会再测试一下
+    #         该方法因为类的变更，不保证能够运行成功
+    #     '''
+    #     w,h = 1024,128
+    #
+    #     thu_data = Thchs30(path)
+    #     x_set,y_set = thu_data.load_from_path()
+    #
+    #     model_helper = LASModel()
+    #     model_helper.compile(feature_shape=(w,h),ms_output_size=1437)
+    #     if load_model is not None:
+    #         load_model = os.path.abspath(load_model)
+    #         model_helper.load(load_model)
+    #
+    #     for i in range(7,14):
+    #         vloader = VoiceLoader(x_set, y_set,
+    #                               batch_size=16,
+    #                               n_mels=128,
+    #                               feature_pad_len=w,
+    #                               max_label_len=256,)
+    #                               # cut_sub=int(16*(1.5**i)), )#一步一步的扩大数据集，更容易拟合貌似
+    #
+    #         model_helper.fit(vloader,epoch=int(6*(1.5**i)))
+
+
 class ReLASModel(AcousticModel):
     def compile(self,feature_shape = (256,128),ms_output_size = 1423):
         self.ms_output_size = ms_output_size
@@ -142,6 +174,34 @@ class ReLASModel(AcousticModel):
         base_model = train_model
 
         self.built(train_model,base_model)
+
+    # def train_relas(path,load_model = None):
+    #     '''
+    #     停止维护2019年7月1日，效果貌似很差，主要时间有限，以后有机会可以尝试一下
+    #         该方法因为类的变更，不保证能够运行成功
+    #     '''
+    #     w,h = 1024,128
+    #
+    #     thu_data = Thchs30(path)
+    #     x_set,y_set = thu_data.load_from_path()
+    #
+    #     model_helper = ReLASModel()
+    #     model_helper.compile(feature_shape=(w,h),ms_output_size=1437)
+    #     if load_model is not None:
+    #         load_model = os.path.abspath(load_model)
+    #         model_helper.load(load_model)
+    #
+    #     for i in range(14):
+    #         vloader = VoiceLoader(x_set, y_set,
+    #                               batch_size=16,
+    #                               n_mels=128,
+    #                               feature_pad_len=w,
+    #                               sil_mode=-1,
+    #                               max_label_len=256,
+    #                               cut_sub=int(16*(1.5**i)), )#一步一步的扩大数据集，更容易拟合貌似
+    #
+    #         model_helper.fit(vloader,epoch=int(6*(1.5**i)))
+
 
 class LASCTCModel(AcousticModel):
     def compile(self,feature_shape = (256,128),label_max_string_length = 32,ms_output_size = 1423):
@@ -223,3 +283,30 @@ class LASCTCModel(AcousticModel):
         base_model = Model(ipt,y_pred)
 
         self.built(train_model,base_model)
+
+    # def train_lasctc(path,load_model = None):
+    #     '''
+    #     停止维护2019年7月1日，跑不动
+    #         该方法因为类的变更，不保证能够运行成功
+    #     '''
+    #     w,h = 1024,128
+    #     max_label_len = 64
+    #
+    #     thu_data = Thchs30(path)
+    #     x_set,y_set = thu_data.load_from_path()
+    #
+    #     vloader = VoiceLoader(x_set,y_set,
+    #                           n_mels=128,feature_pad_len=w,
+    #                           max_label_len=max_label_len,
+    #                           cut_sub=16,
+    #                           sil_mode=-1,
+    #                           )
+    #
+    #     model_helper = LASCTCModel()
+    #     model_helper.compile(feature_shape=(w,h),label_max_string_length=max_label_len,ms_output_size=vloader.pymap.max_index)
+    #
+    #     if load_model is not None:
+    #         load_model = os.path.abspath(load_model)
+    #         model_helper.load(load_model)
+    #
+    #     model_helper.fit(vloader)
