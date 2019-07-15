@@ -13,14 +13,14 @@ A(Attention) B(Batchnorm) C(Conv) D(Deep) NN(nerual network), hhhhh...
 将DCBNN2D中的结构不扩维，直接在1D上进行操作，效果出奇的好，清华数据集能够过拟合，loss可以降到3左右（过拟合了），在多数据集上loss大概能降到13左右，此时准确率大概会有80%左右。
 
 
-![image/thchs30_DCBNN1D_epoch_88_step_88000.png](../image/thchs30_DCBNN1D_epoch_88_step_88000.png)
+![image/thchs30_DCBNN1D_epoch_88_step_88000.png](image/thchs30_DCBNN1D_epoch_88_step_88000.png)
 
-![image/thchc_DCBNN1d_test_result.png](../image/thchc_DCBNN1d_test_result.png)
+![image/thchc_DCBNN1d_test_result.png](image/thchc_DCBNN1d_test_result.png)
 
 因为这个模型，我把在清华数据集上的效果作为baseline来测试我的其他模型（连清华数据集都过拟合不了，更谈不上泛化了）
 
 在将其余用到的数据集全部丢进去后，仍然能有较好的训练结果，但没有办法完全拟合，大概loss会降到13左右，此时得到了release中提供的`DCBNN1D_cur_best.h5`
-![image/all5_DCBNN1D_epoch_129_step_129000.png](../image/all5_DCBNN1D_epoch_129_step_129000.png)
+![image/all5_DCBNN1D_epoch_129_step_129000.png](image/all5_DCBNN1D_epoch_129_step_129000.png)
 
 ### DCBNN1Dplus
 在DCBNN1D的基础上叠加卷积层，目前训练结果来看效果没有DCBNN1D好，可能训练次数不够，欠拟合；也可能层数过多，优化器能力不足。图没有及时留证，这里不提供了。
