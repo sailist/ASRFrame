@@ -1,5 +1,5 @@
-'''主要用于清洗语料数据集，但如果改改应该也能用于语言模型的数据集清洗'''
-from util.mapmap import PinyinMapper
+'''主要用于清洗声学语料数据集，但如果改改应该也能用于语言模型的数据集清洗'''
+from util.mapmap import PinyinMapper,ChsMapper
 import os
 import re
 import json
@@ -13,32 +13,27 @@ class Cleaner():
     用于清洗和归一化数据集的，主要包括在每个音频下创建相应的同名标签文件，并将标签文件没有汉语的用pinyin库添加拼音
     '''
     def __init__(self,path):
+        assert os.path.exists(path), "path not exists!"
         self.path = path
         self.pymap = PinyinMapper(use_pinyin=True)
+        self.chs_map = ChsMapper()
     def delete_number_file(self):
         pass
 
     def gene_pinyin(self):
         pass
 
-    def read_dict(self,dict_path):
+    def check_chs_line_aval(self,line:str):
         '''
-        读取字典，（废弃不用，已经有了更好的PinyinMap类）
-        :param dict_path:
-        :return:
-        '''
-        py_word_map = {}  # 存储了字：拼音的字典列表
-        py_num_map = {}  # 存储了拼音:index 的字典，用于创建npy
-        # with open("./common_npy.txt", encoding="utf-8") as f:
-        with open(dict_path, encoding="utf-8") as f:
-            for index, line in enumerate(f):
-                py, words = line.split("\t")
-                for i in words:
-                    lst = py_word_map.setdefault(i, [])
-                    lst.append(py)
-                py_num_map[py] = index
+        检查该行中的汉字是否出现在字典中，是否有数字，字母，标点符号
 
-        return py_word_map,py_num_map
+        :param line:
+        :return: 如果存在未出现在字典中的汉字，或存在字母，则返回False，对应标注应该不能生成
+                否则，返回将阿拉伯数字替换为汉字，将标点符号去除后的字符串（无换行符）
+        '''
+        # TODO
+
+
 
 class Thchs30(Cleaner):
     def delete_number_file(self):
@@ -57,14 +52,6 @@ class Thchs30(Cleaner):
                 os.remove(i)
                 os.remove(wavf)
 
-    def clear_npfile(self):
-        path = os.path.join(self.path,"data")
-        fs = os.listdir(path)
-        fs = [os.path.join(path,i) for i in fs]
-        fs = [i for i in fs if i.endswith(".npy")]
-        for i in fs:
-            os.remove(i)
-
     def gene_pinyin(self):
         '''
         因为thchs 数据集本身标注了拼音，因此这里只生成npy文件
@@ -76,6 +63,18 @@ class Thchs30(Cleaner):
         return
 
 class Z200(Cleaner):
+    # @staticmethod
+    def clean(self):
+        '''
+        Aidatatang_200zh数据集
+        传入包含G0002/G0003...的路径
+        :param path:
+        :return:
+        '''
+        self.delete_number_file()
+        self.clear_npfile()
+        self.gene_pinyin()
+
     def delete_number_file(self):
         '''
         删除含有字母或数字的文件
@@ -163,10 +162,13 @@ class Z200(Cleaner):
 
         print("z200 finished.")
 
-class AiShell(Cleaner):
-    def __init__(self, path):
-        super().__init__(path)
 
+
+class AiShell(Cleaner):
+    def clean(self):
+        self.gene_pinyin()
+
+    '''AiShell中存在一些没有标注的音频，在生成的时候会被删除'''
     def gene_pinyin(self):
         label_file = os.path.join(self.path,"transcript/aishell_transcript_v0.8.txt")
         assert os.path.exists(label_file),"file 'aishell_transcript_v0.8.txt' not exists, please check dir ./transcript/ ! "
@@ -224,6 +226,15 @@ class AiShell(Cleaner):
         return fs
 
 class ST_CMDS(Cleaner):
+    def clean(self):
+        '''
+        ST-CMDS数据集
+        传入包含*.wav/*.txt/*.metadata的路径
+        :param path:
+        :return:
+        '''
+        self.gene_pinyin()
+
     def gene_pinyin(self):
         fs = os.listdir(self.path)
         fs = [os.path.join(self.path,f) for f in fs if f.endswith(".txt")]
@@ -241,6 +252,15 @@ class ST_CMDS(Cleaner):
         print(f"ST_CMDS finished.\n")
 
 class Primewords(Cleaner):
+    def clean(self):
+        '''
+        Primewords Chinese Corpus Set 1数据集
+        传入包含audio_files/set1_transcript.json 的路径
+        :param path:
+        :return:
+        '''
+        self.gene_pinyin()
+
     def gene_pinyin(self):
         import json
         json_path = os.path.join(self.path,"set1_transcript.json")
@@ -288,6 +308,7 @@ class Primewords(Cleaner):
         print("Primewords finished.\n")
 
 class News2016zh(Cleaner):
+    '''还未写完'''
     def gene_pinyin(self):
         '''
         https://github.com/brightmart/nlp_chinese_corpus中的新闻语料json版(news2016zh)

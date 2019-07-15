@@ -1,12 +1,11 @@
-import examples
 import config
+from util.reader import Z200,Thchs30,Primewords,ST_CMDS,AiShell
 
 
 if __name__ == "__main__":
-    examples.summary_thchs30(config.thu_datapath)
-    examples.summary_aishell(config.aishell_datapath)
-    examples.summary_prime(config.prime_datapath)
-    examples.summary_stcmds(config.stcmd_datapath)
-    examples.summary_z200(config.z200_datapath)
+    Thchs30(config.thu_datapath).summary()
+    AiShell(config.aishell_datapath).summary()
+    Primewords(config.prime_datapath).summary()
+    ST_CMDS(config.stcmd_datapath).summary()
+    Z200(config.z200_datapath).summary()
 
-    pass

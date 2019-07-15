@@ -2,6 +2,8 @@ from keras.layers import Input,Dense,Embedding,Dropout,Lambda
 from keras.losses import categorical_crossentropy
 from keras import Model
 from core import LanguageModel
+from util.reader import VoiceDatasetList,TextLoader
+from util.mapmap import PinyinMapper,ChsMapper
 
 class DCNN1D(LanguageModel):
     '''比较差的语言模型，直觉上因为特征步长过少，卷积层增多时感受野太大忽略了局部特征，导致了该模型的失败
@@ -9,8 +11,9 @@ class DCNN1D(LanguageModel):
     '''
     def compile(self,feature_shape = (64,),ms_input_size = 1437,ms_output_size = 5000):
         ipt = Input(shape=feature_shape) # 拼音 index
+        emb = Embedding(input_dim=ms_input_size,output_dim=ms_output_size)(ipt)
 
-        emb = self.cnn1d_cell(32,ipt,False)
+        emb = self.cnn1d_cell(32,emb,False)
         emb = self.cnn1d_cell(32,emb,False)
         # emb = self.cnn1d_cell(64,emb,False)
         # emb = self.cnn1d_cell(64,emb,False)
@@ -37,3 +40,27 @@ class DCNN1D(LanguageModel):
         '''y_true 需要 to_categorical'''
         y_true, y_pred, label_len = args
         return categorical_crossentropy(y_true,y_pred)
+
+    @staticmethod
+    def train(datagene: list, load_model=None):
+        dataset = VoiceDatasetList()
+        _, y_set = dataset.merge_load(datagene, choose_x=False, choose_y=True)
+
+        max_label_len = 64
+        pinyin_map = PinyinMapper(sil_mode=0)
+        chs_map = ChsMapper()
+        tloader = TextLoader(y_set, padding_length=max_label_len, pinyin_map=pinyin_map, cut_sub=16,
+                             chs_map=chs_map)
+
+        model_helper = DCNN1D()
+        model_helper.compile(feature_shape=(max_label_len, tloader.max_py_size),
+                             ms_input_size=pinyin_map.max_index,
+                             ms_output_size=chs_map.categores)
+
+        if load_model is not None:
+            model_helper.load(load_model)
+
+        model_helper.fit(tloader, -1)
+
+if __name__ == "__main__":
+    DCNN1D().compile(feature_shape=(64,))

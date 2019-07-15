@@ -67,21 +67,18 @@ class DCSOM(BaseJoint):
         print(pyline,chline)
         return pyline,chline,[ctc_prob[0]]
 
+    @staticmethod
+    def real_predict(ac_path="./model/DCBNN1D_cur_best.h5", lg_path="./model/language/SOMMalpha_step_18000.h5"):
+        dcs = DCSOM(acmodel_input_shape=(1600, 200),
+                    acmodel_output_shape=(200,),
+                    lgmodel_input_shape=(200,),
+                    py_map=PinyinMapper(sil_mode=-1),
+                    chs_map=ChsMapper(),
+                    divide_feature=8)
 
-if __name__ == "__main__":
-    dcs = DCSOM(acmodel_input_shape=(1600,200),
-                acmodel_output_shape=(200,),
-                lgmodel_input_shape=(200,),
-                py_map=PinyinMapper(sil_mode=-1),
-                chs_map=ChsMapper(),
-                divide_feature=8)
-
-    # dcs.compile("../model/DCBNN1D_step_326000.h5",
-    #             "../model/language/SOMMalpha_step_18000.h5")
-    dcs.compile("../model/DCBNN1D_cur_best.h5",
-                "../model/language/SOMMalpha_step_18000.h5")
-    while True:
-        try:
-            print(dcs.record_from_cmd(5))
-        except:
-            print("[info*]未识别到语音")
+        dcs.compile(ac_path, lg_path)
+        while True:
+            try:
+                print(dcs.record_from_cmd(5))
+            except:
+                print("[info*]未识别到语音")

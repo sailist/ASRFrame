@@ -287,7 +287,7 @@ class AcousticModel(BaseModel):
         i = self.pre_epoch
         if i == 0:
             self.save(epoch=0,step=0)
-        self.test(voice_loader.choice(), use_ctc=use_ctc)
+        self.test(voice_loader.choice_test(), use_ctc=use_ctc)
 
         loss_plot = Lossplot(self.__class__.__name__, save_dir=config.acoustic_loss_dir)
         loss_report = LossReportor()

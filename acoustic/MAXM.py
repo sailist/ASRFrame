@@ -129,7 +129,7 @@ class MPCONM(AcousticModel):
             load_model = os.path.abspath(load_model)
             model_helper.load(load_model)
 
-        model_helper.fit(vloader, epoch=-1, save_step=1000, use_ctc=True)
+        model_helper.fit(vloader, epoch=-1, save_step=100, use_ctc=True)
 
 
 class MPBCONM(AcousticModel):

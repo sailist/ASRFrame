@@ -171,17 +171,34 @@ python run_train.py
 声学模型部分：目前保证没有运行错误能跑通的声学模型是DCBNN1D，如果不使用预训练权重的话第二个参数注意为None
 语言模型部分：目前仅提供传统的HMM（使用的Pinyin2Hanzi的库）和Somial改（我称之为SOMM，具体分为SOMMalpha和SOMMword，结构相同，粒度不同）
 
+以训练声学模型DCBNN1D为例，核心逻辑如下：
+```python
+import config
+from acoustic.ABCDNN import DCBNN1D
+from util.reader import Thchs30
+
+thchs = Thchs30(config.thu_datapath)
+config.model_dir = "./model/"
+
+DCBNN1D.train([thchs],)
+# 如果有预训练的权重，则：（注意路径是相对于config.model_dir下的路径）
+DCBNN1D.train([thchs],config.join_model_path("./DCBNN1D_step_326000.h5"))
+```
+
 ### 真实使用
+能真实使用的模型，我为其写了`real_predict()`方法，打开`run_real_predict.py`文件，可以看到具体的模型运行方法，注释掉你不需要的，即可进行使用。
 ```bash
 python run_real_predict.py
 ```
-运行前，注意打开该文件更改一下模型的名称
+
 
 ### 使用UI
 该项目搭建了一个简易的UI，对识别功能进行了封装
 ```bash
 python run_ui.py
 ```
+> 可读性可能有点差，建议别看UI
+
 
 ### 预训练模型的使用
 预训练的权重我放到release中了，
@@ -189,33 +206,36 @@ python run_ui.py
 - 声学模型部分效果最好的模型是DCBNN1D,模型名称`DCBNN1D_cur_best.h5`
 - 语言模型部分目前效果最好的模型是SOMMalpha,预训练权重文件`SOMMalpha_step_18000.h5`
 
+### 搭建自己的模型
+具体可以参考acoustic下和language下的模型，主要compile和train方法需要自行实现。
+
+注意：
+- Voiceloader的输入是(xs,ys,feature_len,label_len),placeholder
+> placeholder是无用的，loss值是在模型内由ctcloss计算产生
+
+
+
 # 体系架构介绍
 为了更好的理解项目架构，在这里做一些介绍
 ## acoustic：声学模型
-- Reader是读取各种数据集，和数据生成器的类
-- 其他py文件是各自的模型，调用通用的接口，compile、save、load、fit
+每一个具体的文件都是以某一个经典架构为核心搭建出来的一个或多个模型。在该文件下的`README.md`是具体的介绍。
+
+如果要使用我封装好的基类搭建自己的模型，请参考模型内的具体实现。
 
 ## core：各种模型用到的层
 - attention（好像不是很好用，不清楚是不是哪里实现错误了，求大佬看一下）
-- positional embedding层（Transformer里的那个）
-- ctc，包括求loss和decode方法的封装
-- glu（线性门控单元）
-- layer norm（层归一化，但实际上我只用了keras提供的batch norm2333）
-- muti_gpu（据说是可以真正的多gpu并行运算，我没有试）
 - base_model（基类，实现自己的模型如果按照基类的规范写，会非常的容易，只需要搭起模型，数据集和训练的过程完美的封装好了）
-
-## examples：各种封装好的示例
-- 数据集清洗（dataset_clean.py)
-- 数据集统计（dataset_summary.py)
-- 模型训练
-- 真实使用测试
+- ctc_function，包括求loss和decode方法的封装，可以当成keras的layer来调用（Lambda层的封装）
+- glu（线性门控单元）
+- layer norm（层归一化）
+- muti_gpu（据说是可以真正的多gpu并行运算，我没有试）
+- positional embedding层（Transformer里的那个位置编码）
 
 ## feature：特征提取方法，实现了基于batch的提取
 - 目前，MelFeature5是最好的实现，参考的[ASRT](https://github.com/nl8590687/ASRT_SpeechRecognition)这个项目的实现
 
 ## language：语言模型实现，目前实现进度：
-- 一个简单的卷积网络（效果不好，废弃
-- 基于Somiao输入法的架构构建的简化版（我称之为SOMM），分为两种粒度（字母级和拼音级），目前效果最好的是SOMMalpha，但仍然不能投入使用
+同声学模型，按经典架构区分，具体参考目录下的`README.md`
 
 ## util：各种工具，包括：
 - cleaner：清洗数据，包括上文提到的5种数据集的清洗代码，运行后会清洗为可供本项目内所有模型读取的统一格式
@@ -231,8 +251,7 @@ python run_ui.py
 - 可读性可能有点差，但实际上功能比较齐全
 
 ## jointly：联合模型，对声学模型和语言模型的封装
-- DCHMM：DCBNN1D+HMM(Pinyin2Hanzi)
-- DCSOM：DCBNN1D+SOMM
+具体介绍参考目录下`README.md`
 
 
 # 结果展示
@@ -240,22 +259,8 @@ python run_ui.py
 
 ![image/ui.png](image/ui.png)
 
-## 声学模型部分
+## [声学模型部分](acoustic/README.md)
 ### DCBNN1D
-直白的讲，我都没有想到我的这个模型效果会这么好，当初真的是非常惊喜的。
-
-对于thchs30语料,dcbnn1d大概在batchsize=16,step=1000,epoch=100的时候会拟合,此时loss会下降到3.5左右，准确率会上升到近97%
-这种情况算是过拟合，拿这个模型实际使用的话效果会很差(作为比对我把它命名为`overfit_thchs_DCBNN1D.h5`)，毕竟清华的数据集同质性太高了
-
-![image/thchs30_DCBNN1D_epoch_88_step_88000.png](image/thchs30_DCBNN1D_epoch_88_step_88000.png)
-
-![image/thchc_DCBNN1d_test_result.png](image/thchc_DCBNN1d_test_result.png)
-
-不过因为是过拟合，所以我把在清华数据集上的效果作为baseline来测试我的其他模型（连清华数据集都过拟合不了，更谈不上泛化了）
-
-在将其余用到的数据集全部丢进去后，仍然能有较好的训练结果，但没有办法完全拟合，大概loss会降到13左右，此时得到了release中提供的`DCBNN1D_cur_best.h5`
-![image/all5_DCBNN1D_epoch_129_step_129000.png](image/all5_DCBNN1D_epoch_129_step_129000.png)
-
 
 
 
@@ -264,11 +269,6 @@ python run_ui.py
 
 
 ### WAVEM(wavenet)
-wavenet的迁移版，参考了网上一个TensorFlow的开源实现，链接在参考链接中提供了。
-
-2019年7月14日14:43:36，loss降到196，但是准确率为0，ctc解码后无汉字
-> 怀疑是因为存在空洞卷积，直觉上有池化的作用但是不影响时间长，这样的话特征的长度应该如何计算？感觉问题应该是出在这里
-
 
 
 ### 废弃模型

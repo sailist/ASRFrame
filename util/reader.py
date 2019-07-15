@@ -15,6 +15,7 @@ from keras.utils import Sequence
 from keras.preprocessing.sequence import pad_sequences
 from keras.utils.np_utils import to_categorical
 
+
 filter_char = list('''[!"'\(\),\.\?@q~“”… 　、。」！（），？Ａａｂｃｋｔ]*''')
 # re_unchs = re.compile() # 非汉字，无拼音的
 
@@ -23,6 +24,7 @@ filter_char = list('''[!"'\(\),\.\?@q~“”… 　、。」！（），？Ａ�
 
 class VoiceDataGenerator():
     def __init__(self,path):
+        assert os.path.exists(path), "path not exists!"
         self.set_path(path)
 
     def set_path(self,path):
@@ -34,7 +36,7 @@ class VoiceDataGenerator():
         :param choose_y: 是否选择相应的标注文件
         :return: x_sets,y_sets，注意当相应的choose为False时，返回的是None，但是仍然是返回两个元素，注意接收变量
         '''
-        pass
+        return [],[]
 
     def _choose(self,x_set,y_set,choose_x,choose_y):
         if choose_x and not choose_y:
@@ -43,12 +45,20 @@ class VoiceDataGenerator():
             return None,y_set
         return x_set,y_set
 
+    def summary(gene):
+        x_set, y_set = gene.load_from_path()
+        vloader = VoiceLoader(x_set, y_set, vad_cut=False, check=False)
+        print(f"start to summary the {gene.__class__.__name__} dataset")
+        vloader.summery(audio=True,
+                        label=True,
+                        plot=True,
+                        dataset_name=gene.__class__.__name__)
+
+
 class Thchs30(VoiceDataGenerator):
     def load_from_path(self,choose_x = True,choose_y = True):
         path = os.path.abspath(self.path)
         datapath = os.path.join(path,"data") # ./data/
-
-        assert os.path.exists(datapath),"path not exists!"
 
         fs = os.listdir(datapath) # .wav / .trn
         fs = [os.path.join(datapath,i) for i in fs]
@@ -68,7 +78,7 @@ class Z200(VoiceDataGenerator):
 
         for sub_dir in root:
             sub_fs = os.listdir(sub_dir)
-            sub_fs = [os.path.join(sub_dir,i[:-4]) for i in sub_fs if i.endswith(".wav")]
+            sub_fs = [os.path.join(sub_dir,i[:-4]) for i in sub_fs if i.endswith(".txt")]
             fs.extend(sub_fs)
 
         x_set = [f + ".wav" for f in fs]
@@ -91,7 +101,7 @@ class Primewords(VoiceDataGenerator):
         allfs = []
         for subff in ff00:
             wavfs = os.listdir(subff)
-            wavfs = [os.path.join(subff,f[:-4]) for f in wavfs if f.endswith(".wav")]
+            wavfs = [os.path.join(subff,f[:-4]) for f in wavfs if f.endswith(".txt")]
             allfs.extend(wavfs)
         x_set = [f"{f}.wav" for f in allfs]
         y_set = [f"{f}.txt" for f in allfs]
@@ -138,7 +148,7 @@ class AiShell(VoiceDataGenerator):
             wavfs = [os.path.join(s_path,wavf) for wavf in wavfs]
             fs.extend(wavfs)
 
-        fs = [f[:-4] for f in fs if f.endswith(".wav")] # 过滤审查
+        fs = [f[:-4] for f in fs if f.endswith(".txt")] # 过滤审查
 
         return fs
 
@@ -149,7 +159,7 @@ class Currentpath(VoiceDataGenerator):
     def load_from_path(self,choose_x = True,choose_y = True):
         fs = os.listdir(self.path)
         fs = [os.path.join(self.path,f) for f in fs]
-        fs = [f[:-4] for f in fs if f.endswith(".wav")]
+        fs = [f[:-4] for f in fs if f.endswith(".txt")]
 
         x_set = [f"{f}.wav" for f in fs]
         y_set = [f"{f}.txt" for f in fs]
@@ -563,9 +573,7 @@ class TextLoader(DataLoader):
         :param cut_sub:
         :param pinyin_map: 拼音-index 和alpha-index 的字典
             该字典的max_index 一般和编译模型用到的第一层的输入（语言模型）或最后一层的softmax（声学模型）有关
-            具体示例可以看example/train_language_model.py 和 train_acoustic_model.py 的具体使用
         :param chs_map:汉字-index 的字典，从外界传入，该字典的max_index一般和编译模型用到的最后一层的softmax的最大值相同
-            具体示例可以看example/train_language_model.py 的具体使用
         :param create_for_train:
         :param grain: 粒度，"word"/"alpha"，表示返回的输入的粒度是拼音的index向量还是拼音相应的字母组成的index向量
             如果粒度为"alpha"，那么默认不带声调，a-z分别为1-26，0为padding
@@ -704,9 +712,7 @@ class TextLoader2(DataLoader):
         :param cut_sub:
         :param pinyin_map: 拼音-index 和alpha-index 的字典
             该字典的max_index 一般和编译模型用到的第一层的输入（语言模型）或最后一层的softmax（声学模型）有关
-            具体示例可以看example/train_language_model.py 和 train_acoustic_model.py 的具体使用
         :param chs_map:汉字-index 的字典，从外界传入，该字典的max_index一般和编译模型用到的最后一层的softmax的最大值相同
-            具体示例可以看example/train_language_model.py 的具体使用
         :param create_for_train:
         :param grain: 粒度，"word"/"alpha"，表示返回的输入的粒度是拼音的index向量还是拼音相应的字母组成的index向量
             如果粒度为"alpha"，那么默认不带声调，a-z分别为1-26，0为padding

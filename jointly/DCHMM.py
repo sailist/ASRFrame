@@ -58,6 +58,26 @@ class DCHMM(BaseJoint):
         '''TODO 未规范返回值，慎用'''
         return pyline,chline,[prob]
 
+    @staticmethod
+    def real_predict(path="./model/DCBNN1D_cur_best.h5"):
+        '''
+        :param path:DCBNN1D的预训练权重文件路径
+        :return:
+        '''
+        dcnn = DCHMM(
+            acmodel_input_shape=(1600, 200),
+            acmodel_output_shape=(200,),
+            lgmodel_input_shape=None,
+            py_map=PinyinMapper(sil_mode=-1),
+            chs_map=ChsMapper())
+
+        dcnn.compile(path)
+
+        while True:
+            pyline, chline, prob = dcnn.record_from_cmd(3)
+            print(pyline, chline, prob)
+
+
 
 if __name__ == "__main__":
     dcnn = DCHMM(
