@@ -187,10 +187,21 @@ python run_real_predict.py
 【2019年7月16日】注意：最近项目更新频繁，该方法可能出错
 
 这个由于时间关系没有去找更多的语料，因此只写了清洗wiki的方法:
+>注意要打开该文件更改一下目录
 ```bash
 python run_build_corpus.py
 ```
-这次清洗大概要跑大概两天以上的时间，会生成约2000w条的语料
+随后因为某个错误（最后一个段落有提到）导致模型会停止运行，因此需要将大文本切分为小文本。
+运行下面的代码，注意逐行运行，注意更改第一句的路径
+```bash
+cd path/to/wiki_corpus/
+mkdir splits
+for i in $(find -name '*.txt');do echo $i;split -100000 $i ./splits/$i;done
+```
+随后将`path/to/wiki_corpus/splits`作为语料的根路径
+
+这次清洗大概要跑大概两天以上的时间，会生成约3000w条的语料（根据代码中汉字长度的不同，生成的语料条数不同，但是基本都是千万级的
+
 ### 训练
 同样参考`run_train.py`下的代码，和声学模型的代码完全相同。
 
@@ -308,56 +319,8 @@ python run_ui.py
 在字典中，轻声是没有5的标注的，但是存在一些数据集提前标注好了拼音（如thchs30）存在标注5的问题，因此我在相应的类中做了一点处理，如果拼音中有5会先将5去掉。即'de''de5'是一视同仁的
 
 ## 关于拼音和汉字字典的选择
-拼音字典是从ASRT中获得的一个字典，删除了所有汉字，并且在选择的5个数据集中全部测试过，添加了注音中没有涉及过的一些音，包括
-```text
-"di"(弟弟)
-"rang"(乱嚷嚷)
-"lao"(姥姥)
-哆嗦suo
-动弹tan
-...
-```
+拼音和汉字的字典在2019年7月17日时更新，是通过统计了所有语料的汉字和拼音的词频，并去掉了词频小于50的汉字和拼音后生成的
 
-
-另外，训练过程中删除了以下语料：
-```bash
-cat '/data/voicerec/Primewords Chinese Corpus Set 1/primewords_md_2018_set1/audio_files/3/36/36b7791e-c5f5-4752-9f09-623fdff22c4d.txt'
-萧菩萨哥与萧耨斤不和 萧耨斤暗中命令宦官窥探萧菩萨哥的动静
-xiao1 pu2 sa4 ge1 yu3 xiao1 nou4 jin1 bu4 he2 xiao1 nou4 jin1 an4 zhong1 ming4 ling4 huan4 guan1 kui1 tan4 xiao1 pu2 sa4 ge1 de dong4 jing4
-
-cat '/data/voicerec/Primewords Chinese Corpus Set 1/primewords_md_2018_set1/audio_files/3/3d/3dee0c8b-d50b-4fe8-b745-3cfa7c07035e.txt'
-葬茝阳 生始皇帝 吕不韦相 献公立七年 初行为市
-zang4 chai3 yang2 sheng1 shi3 huang2 di4 lv3 bu4 wei2 xiang1 xian4 gong1 li4 qi1 nian2 chu1 xing2 wei2 shi4
-
- cat '/data/voicerec/Primewords Chinese Corpus Set 1/primewords_md_2018_set1/audio_files/9/90/904cb642-1316-4bed-968f-4fadcb5e24ed.txt'
-章宗立 晏画十事以上 一曰风俗奢忄栗 宜定制度
-zhang1 zong1 li4 yan4 hua4 shi2 shi4 yi3 shang4 yi1 yue1 feng1 su2 she1 xin li4 yi2 ding4 zhi4 du4
-
-cat '/data/voicerec/Primewords Chinese Corpus Set 1/primewords_md_2018_set1/audio_files/e/e3/e3196e1b-bba6-4139-9b68-01886cb5002f.txt'
-老朝祖母 婄外祖父 公外祖母 姥姥伯父 伯爷伯母
-lao3 chao2 zu3 mu3 pou3 wai4 zu3 fu4 gong1 wai4 zu3 mu3 lao3 lao bo2 fu4 bo2 ye2 bo2 mu3
-
- cat '/data/voicerec/Primewords Chinese Corpus Set 1/primewords_md_2018_set1/audio_files/7/75/750ff2d1-d212-49f7-9036-b53e6dbb0223.txt'
-子才出告忄夌子瞻云 尊公意正应欲结姻于陈元康
-zi cai2 chu1 gao4 xin ling2 zi zhan1 yun2 zun1 gong1 yi4 zheng4 ying1 yu4 jie2 yin1 yu2 chen2 yuan2 kang1
-
- cat '/data/voicerec/Primewords Chinese Corpus Set 1/primewords_md_2018_set1/audio_files/f/f1/f14d168a-6008-4d47-9d7c-ffe4f9576d63.txt'
-初忄夌为常侍 求人修起居注 或曰 魏收可
-chu1 xin ling2 wei4 chang2 shi4 qiu2 ren2 xiu1 qi3 ju1 zhu4 huo4 yue1 wei4 shou1 ke3
-
-cat '/data/voicerec/Primewords Chinese Corpus Set 1/primewords_md_2018_set1/audio_files/b/bf/bf120d60-16eb-4023-90d3-df8cefeb1c31.txt'
-笹垣润三询问园村友彦有关情况 偷窃金属加工专家系统软件
-ti yuan2 run4 san1 xun2 wen4 yuan2 cun1 you3 yan4 you3 guan1 qing2 kuang4 tou1 qie4 jin1 shu3 jia1 gong1 zhuan1 jia1 xi4 tong3 ruan3 jian4
-
-cat '/data/voicerec/Primewords Chinese Corpus Set 1/primewords_md_2018_set1/audio_files/c/ce/ce53b1d7-5b19-4c59-9474-8b1327dc0a37.txt'
-闻口称南无阿弥陀佛 龟对曰 师父曾记否
-wen2 kou3 cheng1 na1 mo2 e1 mi2 tuo2 fo2 gui1 dui4 yue1 shi1 fu ceng2 ji4 fou3
-
-```
-
-以及`clear_unavai.sh`脚本中提到的语料，大多存在一些比较奇葩的罕见词，如果不删除，可能会报错，建议将脚本中的路径更改后，运行删除这些语料
-
-> 这些语料中大多是一些非常见词，食之无味弃之可惜，个人认为删掉为好
 
 ## SOMM模型停止训练
 由于未知的原因，SOMM模型训练大概50000个batch的时候会报错停止，因为没有错误代码提示（core dump），不清楚问题具体原因，因此这里提供的解决方案就是以预训练的模型为基础，继续训练
