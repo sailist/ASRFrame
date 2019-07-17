@@ -25,17 +25,17 @@ elif platform.system() == "Windows":
     prime_datapath = r"C:\E\jupyter_notebook\voice_reco\Dataset\primewords_md_2018_set1"
     stcmd_datapath = r"C:\E\jupyter_notebook\voice_reco\Dataset\ST-CMDS-20170001_1-OS"
 
-model_dir = os.path.join(project_path,"model") #模型存储或读取的路径，注意所有模型默认存储都按这个路径来，但也可以手动设置
-dict_dir = os.path.join(project_path,"util","dicts")
+model_dir = os.path.join(project_path,"model") # ./model
+dict_dir = os.path.join(project_path,"util","dicts") #./util/dicts
 
-acoustic_model_dir = os.path.join(model_dir, "acoustic")
-language_model_dir = os.path.join(model_dir, "language")
+acoustic_model_dir = os.path.join(model_dir, "acoustic") # ./acoustic
+language_model_dir = os.path.join(model_dir, "language") # ./language
 
 loss_dir = "./loss_plot/"
-acoustic_loss_dir = os.path.join(loss_dir,"acoustic")
-language_loss_dir = os.path.join(loss_dir,"language")
+acoustic_loss_dir = os.path.join(loss_dir,"acoustic") # ./loss_plot/acoustic
+language_loss_dir = os.path.join(loss_dir,"language") # ./loss_plot/language
 
 join_model_path = lambda x:os.path.join(model_dir, x)
 
-chs_dict_path = os.path.join(dict_dir,"pure_chs.txt")
-py_dict_path = os.path.join(dict_dir,"pure_py.txt")
+chs_dict_path = os.path.join(dict_dir,"pure_chs.txt") # ./util/dicts/...
+py_dict_path = os.path.join(dict_dir,"pure_py.txt") # ./util/dicts/...

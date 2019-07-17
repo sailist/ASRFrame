@@ -16,7 +16,6 @@ aishell = AiShell(config.aishell_datapath) # 据说数据集很差，不用该�
 z200 = Z200(config.z200_datapath)
 wiki = TextDataGenerator(config.wiki_datapath)
 
-config.model_dir = "./model/"
 
 '''用于控制GPU'''
 import os
