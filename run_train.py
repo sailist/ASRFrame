@@ -39,11 +39,11 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0"#使用一个GPU
 '''声学模型——————————————————————————————————————————————————————————————————————————————————'''
 # MCONM.train([thchs],config.join_model_path("./acoustic/MCONM_epoch_55_step_55000.h5"))
 
-MPCONM.train([thchs],config.join_model_path("./acoustic/MPCONM_epoch_313_step_313000.h5"))
+# MPCONM.train([thchs,stcmd,prime,z200],config.join_model_path("./acoustic/MPCONM_epoch_313_step_313000.h5"))
 # WAVEM.train([thchs],)
 
 '''目前最有效的模型'''
-# DCBNN1D.train([thchs], config.join_model_path("./DCBNN1D_step_326000.h5"))
+DCBNN1D.train([thchs],)
 # DCBNN1D.train([thchs,z200,prime,stcmd],load_model=config.join_model_path("./acoustic/DCBNN1D_step_13000.h5"))
 
 

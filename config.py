@@ -1,20 +1,18 @@
 import platform
 import os
 
-max_feature_time_stamp = 256
-max_label_len = 30
-default_sample = 16000
+project_path = os.path.split(os.path.realpath(__file__))[0] #
 
-thu_datapath = None
-z200_datapath = None
-aishell_datapath = None
-prime_datapath = None
-stcmd_datapath = None
+thu_datapath = None # 目录下应该有data/ dev/ 等目录
+z200_datapath = None # 目录下应该有一大堆G../格式的目录
+aishell_datapath = None # 目录下应有wav/和transcript/两个目录
+prime_datapath = None # 目录下应有一个json文件和一个目录
+stcmd_datapath = None # 目录下应该直接是音频文件
 
 wiki_datapath = None
 
 if platform.system() == "Linux":
-    thu_datapath = "/data/voicerec/dataset/dataset/thchs30-openslr/data_thchs30"
+    thu_datapath = "/data/voicerec/thchs30/data_thchs30"
     z200_datapath = "/data/voicerec/z200"
     aishell_datapath = "/data/voicerec/ALShell-1/data_aishell"
     prime_datapath = "/data/voicerec/Primewords Chinese Corpus Set 1/primewords_md_2018_set1"
@@ -27,7 +25,9 @@ elif platform.system() == "Windows":
     prime_datapath = r"C:\E\jupyter_notebook\voice_reco\Dataset\primewords_md_2018_set1"
     stcmd_datapath = r"C:\E\jupyter_notebook\voice_reco\Dataset\ST-CMDS-20170001_1-OS"
 
-model_dir = "./model/" #模型存储或读取的路径，注意所有模型默认存储都按这个路径来，但也可以手动设置
+model_dir = os.path.join(project_path,"model") #模型存储或读取的路径，注意所有模型默认存储都按这个路径来，但也可以手动设置
+dict_dir = os.path.join(project_path,"util","dicts")
+
 acoustic_model_dir = os.path.join(model_dir, "acoustic")
 language_model_dir = os.path.join(model_dir, "language")
 
@@ -37,10 +37,5 @@ language_loss_dir = os.path.join(loss_dir,"language")
 
 join_model_path = lambda x:os.path.join(model_dir, x)
 
-
-latest = {
-
-    "trans2d":"TransModel2D_step_38000.h5",
-    "las":"LASModel_model_10800.h5",
-    "dcbnn1d":"DCBNN1D_cur_best.h5",
-}
+chs_dict_path = os.path.join(dict_dir,"pure_chs.txt")
+py_dict_path = os.path.join(dict_dir,"pure_py.txt")

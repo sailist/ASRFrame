@@ -11,16 +11,22 @@ re_sign = re.compile("\.\?？。、“”\"':：，,<>《》（）\(\)！")
 class Cleaner():
     '''
     用于清洗和归一化数据集的，主要包括在每个音频下创建相应的同名标签文件，并将标签文件没有汉语的用pinyin库添加拼音
+
+        先生成后清洗
+            先不管汉字是否在字典中，在对应的音频文件下生成相应的汉字和拼音（如果没有的话），同时在根目录下生成统计字典。
+            随后再根据标签中数字、字母是否存在等进行删除等操作
     '''
-    def __init__(self,path):
+    def __init__(self,path,strip_tone = False):
         assert os.path.exists(path), "path not exists!"
         self.path = path
-        self.pymap = PinyinMapper(use_pinyin=True)
+        self.strip_tone = strip_tone
+        self.pymap = PinyinMapper()
         self.chs_map = ChsMapper()
     def delete_number_file(self):
         pass
 
-    def gene_pinyin(self):
+    def gene_label(self):
+        '''生成标签，同时统计词频和拼音频率，在根目录下生成dataset_dict_chs.txt和dataset_dict_py.txt'''
         pass
 
     def check_chs_line_aval(self,line:str):
@@ -33,14 +39,53 @@ class Cleaner():
         '''
         # TODO
 
+    def count_label(self,line):
+        '''统计字频汉字要求字符串，拼音要求list'''
+        res = {}
+        for i in line:
+            num = res.setdefault(i,0)
+            res[i] = num+1
 
+        return res
+
+    def merge_count_label(self,res:dict,all_res = None):
+        if all_res is None:
+            all_res = {}
+        for k,v in res.items():
+            num = all_res.setdefault(k,0)
+            all_res[k] = num+v
+
+        return all_res
+
+    def _write_count_result(self,chs_dict:dict,py_dict:dict):
+        chs_dict_path = os.path.join(self.path,f"{self.__class__.__name__}_chs_dict.dict")
+        py_dict_path = os.path.join(self.path,f"{self.__class__.__name__}_py_dict.dict")
+        with open(chs_dict_path,"w",encoding="utf-8") as w:
+            for k,v in chs_dict.items():
+                w.write(f"{k}:{v}\n")
+
+        with open(py_dict_path,"w",encoding="utf-8") as w:
+            for k,v in py_dict.items():
+                w.write(f"{k}:{v}\n")
+
+        print(f"[info*] Write py and chs dict in {self.path}.")
 
 class Thchs30(Cleaner):
-    def delete_number_file(self):
+    def load_trn_fs(self):
         path = os.path.join(self.path, "data")
         fs = os.listdir(path)
-        fs = [os.path.join(path,i) for i in fs]
-        fs = [i for i in fs if  i.endswith(".trn")]
+        fs = [os.path.join(path, i) for i in fs]
+        return [i for i in fs if i.endswith(".trn")]
+
+    def create_dataset_dict(self):
+        '''确保目录下存在汉字和拼音'''
+        fs = self.load_trn_fs()
+        for f in fs:
+            with open(f,encoding="utf-8") as f:
+                f.readline()
+
+    def delete_number_file(self):
+        fs = self.load_trn_fs()
 
         for i in fs:
             with open(i,encoding="utf-8") as f:
@@ -52,15 +97,29 @@ class Thchs30(Cleaner):
                 os.remove(i)
                 os.remove(wavf)
 
-    def gene_pinyin(self):
+    def gene_label(self):
         '''
         因为thchs 数据集本身标注了拼音，因此这里只生成npy文件
         :param path:
         :param filtermuti:
         :return:
         '''
-        print("thchs30 have no need to be clean.\n")
-        return
+        # print("Thchs30 dataset has no need to be create pinyin, .\n")
+        fs = self.load_trn_fs()
+        chs_all_dict = {}
+        py_all_dict = {}
+        for i,f in enumerate(fs):
+            print(f"\rEnumerate in {i},f={f}.",end="\0",flush=True)
+            with open(f,encoding="utf-8") as f:
+                line = f.readline().strip()
+                pyline = f.readline().strip().split(" ")
+                chs_dict = self.count_label(line)
+                chs_all_dict = self.merge_count_label(chs_dict,chs_all_dict)
+
+                py_dict = self.count_label(pyline)
+                py_all_dict = self.merge_count_label(py_dict,py_all_dict)
+
+        self._write_count_result(chs_all_dict,py_all_dict)
 
 class Z200(Cleaner):
     # @staticmethod
@@ -72,15 +131,8 @@ class Z200(Cleaner):
         :return:
         '''
         self.delete_number_file()
-        self.clear_npfile()
-        self.gene_pinyin()
 
-    def delete_number_file(self):
-        '''
-        删除含有字母或数字的文件
-        :param path:
-        :return:
-        '''
+    def load_txt_fs(self):
         root = os.listdir(self.path)
         root = [os.path.join(self.path, i) for i in root if re.search(re_root_path, i) is not None]
         root = [os.path.join(i, "session01/") for i in root]  # 获取每个session01所在的路径
@@ -92,7 +144,17 @@ class Z200(Cleaner):
                 fs = [os.path.join(dir, i) for i in fs if i.endswith(".txt")]
                 all_txtfs.extend(fs)
             else:
-                print(dir)
+                print(f"{dir} not exists, please check it.")
+
+        return all_txtfs
+
+    def delete_number_file(self):
+        '''
+        删除含有字母或数字的文件
+        :param path:
+        :return:
+        '''
+        all_txtfs = self.load_txt_fs()
 
         for sf in all_txtfs:
             with open(sf, encoding="utf-8") as f, open("log.txt", "w") as log:
@@ -105,29 +167,7 @@ class Z200(Cleaner):
                 os.remove(f"{fpre}.wav")
                 os.remove(f"{fpre}.metadata")
 
-    def clear_npfile(self):
-        '''
-        删除npy文件
-        :param path:
-        :return:
-        '''
-        root = os.listdir(self.path)
-        root = [os.path.join(self.path, i) for i in root if re.search(re_root_path, i) is not None]
-        root = [os.path.join(i, "session01/") for i in root]  # 获取每个session01所在的路径
-
-        all_txtfs = []  # 存储了每个txt文件的路径
-        for dir in root:
-            if os.path.exists(dir):
-                fs = os.listdir(dir)
-                fs = [os.path.join(dir, i) for i in fs if i.endswith(".npy")]
-                all_txtfs.extend(fs)
-            else:
-                print(dir)
-
-        for npfile in all_txtfs:
-            os.remove(npfile)
-
-    def gene_pinyin(self):
+    def gene_label(self):
         '''
         z200数据集中只有汉字，没有拼音数据，该方法对其标注的txt添加拼音数据，同时，可以生成相应的npy文件，加快读取速度
         :param path: z200的根目录
@@ -136,40 +176,36 @@ class Z200(Cleaner):
         :param debug: 输出处理序列
         :return:
         '''
-        root = os.listdir(self.path)
-        root = [os.path.join(self.path, i) for i in root if re.search(re_root_path, i) is not None]
-        root = [os.path.join(i, "session01/") for i in root]  # 获取每个session01所在的路径
+        all_txtfs = self.load_txt_fs()
 
-        all_txtfs = []  # 存储了每个txt文件的路径
-        for dir in root:
-            if os.path.exists(dir):
-                fs = os.listdir(dir)
-                fs = [os.path.join(dir, i) for i in fs if i.endswith(".txt")]
-                all_txtfs.extend(fs)
-            else:
-                print(dir)
+        chs_all_dict = {}
+        py_all_dict = {}
 
         for i,sf in enumerate(all_txtfs):
             print(f"\r{i},{sf}.",end="\0",flush=True)
 
             with open(sf, encoding="utf-8") as f, open("log.txt", "w") as log:
                 line = f.readline().strip()
-                pyline = self.pymap.sent2pylist(line)
+                pyline = self.pymap.sent2pylist(line,False)
+
+                chs_dict = self.count_label(line)
+                py_dict = self.count_label(pyline)
+                chs_all_dict = self.merge_count_label(chs_dict,chs_all_dict)
+                py_all_dict = self.merge_count_label(py_dict,py_all_dict)
 
             with open(sf, "w", encoding="utf-8") as f:
                 f.write(f"{line}\n")
-                f.write(f"{pyline}\n")
+                f.write(f"{' '.join(pyline)}\n")
 
         print("z200 finished.")
-
-
+        self._write_count_result(chs_all_dict,py_all_dict)
 
 class AiShell(Cleaner):
     def clean(self):
         self.gene_pinyin()
 
     '''AiShell中存在一些没有标注的音频，在生成的时候会被删除'''
-    def gene_pinyin(self):
+    def gene_label(self):
         label_file = os.path.join(self.path,"transcript/aishell_transcript_v0.8.txt")
         assert os.path.exists(label_file),"file 'aishell_transcript_v0.8.txt' not exists, please check dir ./transcript/ ! "
         file_label_map = {}
@@ -185,6 +221,9 @@ class AiShell(Cleaner):
         dev_root = os.path.join(self.path,"wav/dev")
         # print(file_label_map)
         i = 0
+
+        chs_all_dict = {}
+        py_all_dict = {}
         for fs in [train_root,test_root,dev_root]: #每一个目录
             fs = self._get_sub_wavs(fs)
             for f in fs: # 每一个wav文件
@@ -199,12 +238,22 @@ class AiShell(Cleaner):
                 if line is not None:
                     with open(pyfile,"w",encoding="utf-8") as w:
                         line = file_label_map[fpre]
-                        pyline = self.pymap.sent2pylist(line)
+                        pyline = self.pymap.sent2pylist(line,to_str=False)
+
+                        chs_dict = self.count_label(line)
+                        py_dict = self.count_label(pyline)
+                        chs_all_dict = self.merge_count_label(chs_dict,chs_all_dict)
+                        py_all_dict = self.merge_count_label(py_dict,py_all_dict)
+
                         w.write(f"{line}\n")
-                        w.write(f"{pyline}\n")
+                        w.write(f"{' '.join(pyline)}\n")
+
+
                 else:
                     os.remove(f)
                     print(f"{f} not have label, delete it.")
+
+        self._write_count_result(chs_all_dict,py_all_dict)
         print("Aishell finished.\n")
 
     def _get_sub_wavs(self,path):
@@ -235,20 +284,31 @@ class ST_CMDS(Cleaner):
         '''
         self.gene_pinyin()
 
-    def gene_pinyin(self):
+    def gene_label(self):
         fs = os.listdir(self.path)
         fs = [os.path.join(self.path,f) for f in fs if f.endswith(".txt")]
 
+        chs_all_dict = {}
+        py_all_dict = {}
         for i,f in enumerate(fs):
             print(f"\r{i},{f}.",end="\0",flush=True)
             line = None
             with open(f,encoding="utf-8") as ft: # 打开txt文件读取汉字标注
                 line = ft.readline().strip()
-            if line is not None:
+
+            if len(line) > 0:
                 pyline = self.pymap.sent2pylist(line) # 转化为拼音
+
                 with open(f,"w",encoding="utf-8") as w: # 写拼音到第二行
+                    chs_dict = self.count_label(line)
+                    py_dict = self.count_label(pyline)
+                    chs_all_dict = self.merge_count_label(chs_dict, chs_all_dict)
+                    py_all_dict = self.merge_count_label(py_dict, py_all_dict)
+
                     w.write(f"{line}\n")
                     w.write(f"{pyline}\n")
+
+        self._write_count_result(chs_all_dict,py_all_dict)
         print(f"ST_CMDS finished.\n")
 
 class Primewords(Cleaner):
@@ -261,7 +321,7 @@ class Primewords(Cleaner):
         '''
         self.gene_pinyin()
 
-    def gene_pinyin(self):
+    def gene_label(self):
         import json
         json_path = os.path.join(self.path,"set1_transcript.json")
         assert os.path.exists(json_path),"set1_transcript.json not exists!"
@@ -286,6 +346,10 @@ class Primewords(Cleaner):
             ff00.extend(subff)
 
         i = 0
+
+        chs_all_dict = {}
+        py_all_dict = {}
+
         for subff in ff00:
             wavfs = os.listdir(subff)
             wavfs = [wavf for wavf in wavfs if wavf.endswith(".wav")] # 过滤审查一遍
@@ -296,6 +360,11 @@ class Primewords(Cleaner):
                 line = file_label_map.get(wavf,None)
                 pyline = self.pymap.sent2pylist(line)
 
+                chs_dict = self.count_label(line)
+                py_dict = self.count_label(pyline)
+                chs_all_dict = self.merge_count_label(chs_dict, chs_all_dict)
+                py_all_dict = self.merge_count_label(py_dict, py_all_dict)
+
                 if line is not None: # 存在标签，可以生成
                     fpre,_ = os.path.splitext(wavf)
                     txtfpath = os.path.join(subff,f"{fpre}.txt")
@@ -305,6 +374,7 @@ class Primewords(Cleaner):
                 else:
                     print(f"file {wavf} not exists, please check the dataset.")
 
+        self._write_count_result(chs_all_dict,py_all_dict)
         print("Primewords finished.\n")
 
 class News2016zh(Cleaner):

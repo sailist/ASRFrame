@@ -44,10 +44,12 @@ pip install -r requirement.txt
 ```
 
 ## 使用
+想看直接使用的方法的话请往后翻，从头训练从这里往下按步骤进行即可，本项目覆盖了数据集下载、清洗、调用模型、训练的全过程
+
 ### 下载数据集
 打开网页链接后仅下载链接名对应的文件即可
 
-##### THCHS30
+#### THCHS30
 万余条语音文件，大约40小时。内容以文章诗句为主，全部为女声。（清华大学语音与语言技术中心（CSLT）出版）
 
 下载链接：[data_thchs30.tgz](https://openslr.org/18/)
@@ -77,39 +79,33 @@ pip install -r requirement.txt
 该项目下：[1.维基百科json版(wiki2019zh)](https://github.com/brightmart/nlp_chinese_corpus)
 
 ### 配置路径
-在config下，配置相应的语料路径，根路径即可
+在`config.py`目录下，配置相应的语料路径，注意是根路径，如果还不确定请参考具体注释设置路径。
 
 ### 清洗声学语料
-数据集的格式不太一样，因此需要稍微清洗一下，这个过程包括生成wav文件下相应的标注文件（如果没有），标注拼音（如果没有）
+由于数据集格式不同，且其中的汉字不一定覆盖了全字典，因此清洗声学数据集的目的主要有以下几点：
+- 保证所有的wav文件下都有一个标注文件，并且统一第一行是汉字，第二行的拼音，没有标签的wav文件全被删除（这主要针对aishell这个数据集，里面有很多未标注的音频文件）。
+- 保证拼音和汉字都存在在字典中，可以被覆盖，不存在的数据均被删除。
+- 保证汉字和拼音一一对应，存在英语、数字的文件应该被删除（因为即使是数字，一百和一零零的发音也是不同的难以确定），标点符号空格等应该被去掉。
+
+因此我的方法是，基于数据集用代码统计生成汉字和拼音字典，在生成的同时根据词频，手动将词频小的拼音和汉字删除，最后再基于手工确认好的字典，将数据集中无法覆盖的数据去除。
+
+在我的选择中，我将频数小于50的拼音和汉字都去除了
+
+
+如果你不需要重新确认字典，可以直接运行以下代码清洗语料，会大概删除几千个文件，包括汉字中有数字字母的，字符长度对不上的，拼音不在字典中的（非常用拼音）
 ```bash
 python run_clean.py
 ```
-等待数据清洗完成，如果只下了一部分数据集可以选择性的清洗
 
-其中拼音以空格隔开，并忽略所有汉字中的空格，英文字母，数字
-> 标注拼音使用 pypinyin
+如果你需要确认字典，那么请具体参考一下`run_create_dict.py`中的代码，自行生成字典
 
-最终所有数据集的格式如下：不管目录结构，一个wav文件下对应一个同名文本文件作为标签，文本内第一行是中文，第二行是拼音
+> PS1:标注拼音使用 pypinyin
 
-会得到如下格式的输出
-```text
-Load pinyin dict. Max index = 1432.
-
-Load pinyin dict. Max index = 1432.
-231706,/data/voicerec/z200/G0155/session01/T0055G0155S0227.txt.z200 finished.
-
-Load pinyin dict. Max index = 1432.
-141599,/data/voicerec/ALShell-1/data_aishell/wav/dev/S0762/BAC009S0762W0332.wavAishell finished.
-
-Load pinyin dict. Max index = 1432.
-50381,2a16115c-6927-4e8a-a738-46d59f678296.wav.Primewords finished.
-
-Load pinyin dict. Max index = 1432.
-102599,/data/voicerec/Free ST Chinese Mandarin Corpus/ST-CMDS-20170001_1-OS/20170001P00366I0025.txt.ST_CMDS finished.
-
-```
+> PS2:最终所有的音频的标注文件均满足：第一行汉字，没有字母数字空格标点，全部存在于字典中；第二行为拼音（带声调），中间以一个空格隔开，全部存在于拼音字典中。
 
 ### 处理用于语言模型的语料
+【2019年7月16日】注意：最近项目更新频繁，该方法可能出错
+
 这个由于时间关系没有去找更多的语料，因此只写了清洗wiki的方法:
 ```bash
 python run_build_corpus.py
@@ -160,7 +156,6 @@ max audio len = 348935, max timestamp = (281, 807) ,min audio len = 13811, sampl
 checked 231663 label files:/data/voicerec/z200/G1428/session01/T0055G1428S0034.txt
 max label len = 43, min label len = 1, pinpin coverage:1182
 result from 231664 sample, used 164.35475000000002 sec
-
 ```
 
 ### 训练

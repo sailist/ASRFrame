@@ -14,6 +14,7 @@ from util.audiotool import VadExtract
 from keras.utils import Sequence
 from keras.preprocessing.sequence import pad_sequences
 from keras.utils.np_utils import to_categorical
+from util.mapmap import PinyinMapper
 
 
 filter_char = list('''[!"'\(\),\.\?@q~“”… 　、。」！（），？Ａａｂｃｋｔ]*''')
@@ -47,7 +48,8 @@ class VoiceDataGenerator():
 
     def summary(gene):
         x_set, y_set = gene.load_from_path()
-        vloader = VoiceLoader(x_set, y_set, vad_cut=False, check=False)
+        py_map = PinyinMapper(sil_mode=-1)
+        vloader = VoiceLoader(x_set, y_set, pymap=py_map,vad_cut=False, check=False)
         print(f"start to summary the {gene.__class__.__name__} dataset")
         vloader.summery(audio=True,
                         label=True,
@@ -268,9 +270,7 @@ class VoiceLoader(DataLoader):
             self.eval_x_set = x_set[floor(-self.set_size * (test_set_rate + evlu_set_rate)):floor(-self.set_size * (test_set_rate))]
             self.eval_y_set = y_set[floor(-self.set_size * (test_set_rate + evlu_set_rate)):floor(-self.set_size * (test_set_rate))]
 
-            self.set_size = len(self.x_set)
-            self.test_set_size = len(self.test_x_set)
-            self.eval_set_size = len(self.eval_x_set)
+            self._update_set_size()
 
         self.on_epoch_end()
 
@@ -294,6 +294,7 @@ class VoiceLoader(DataLoader):
             self._check_pading_avai()
         self.vad = VadExtract()
 
+
         self.pymap = pymap
 
         if self.pymap.sil_mode == 0:
@@ -309,6 +310,10 @@ class VoiceLoader(DataLoader):
         feature_len = feature.shape[1]//self.divide_feature_len
         assert feature_len <= self.feature_pad_len, f"feature padding len is {self.feature_pad_len},but feature timestamp is {feature_len}"
         assert feature.shape[0] == self.n_mels, f"feature dim should be {self.n_mels},but {feature.shape[0]}"
+    def _update_set_size(self):
+        self.set_size = len(self.x_set)
+        self.test_set_size = len(self.test_x_set)
+        self.eval_set_size = len(self.eval_x_set)
 
     @staticmethod
     def audio2feature(xs,feature_pad_len,divide,melf):
@@ -378,8 +383,12 @@ class VoiceLoader(DataLoader):
                     ys.append(label)
                 i += 1
             except:
-                print(f"index {i} maybe error")
-                print(f"file {self.x_set[i]} or {self.y_set[i]} may have some error,please check it and fix it.")
+                print(f"[warning*]file {x_set[i]} or {y_set[i]} may have some error,please check it and fix it.\n"
+                      f"During this process, these files will be ignored.")
+                x_set.pop(i)
+                y_set.pop(i)
+                self._update_set_size()
+
 
             if i == set_size - 1:
                 i = 0
@@ -409,10 +418,10 @@ class VoiceLoader(DataLoader):
             return [xs, None, feature_len, None], None
 
 
-    def create_iter(self,one_batch = False):
+    def create_iter(self,mode="train",one_batch = False):
         index = 0
         while True:
-            yield self.__getitem__(index)
+            yield self.get_item(index,self.batch_size,mode=mode)
             index += self.batch_size
             if index > self.set_size - 1:
                 index = 0

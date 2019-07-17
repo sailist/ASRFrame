@@ -1,21 +1,32 @@
 import os,numpy as np
+import config
 from pypinyin import pinyin,Style,load_phrases_dict
-
-dir_path = os.path.split(os.path.realpath(__file__))[0] #"./util"
-dir_path = os.path.join(dir_path,"dicts") #"./util/dicts"
-
-# py_file = os.path.join(dir_path,"common_npy.txt")
-# py_file = os.path.join(dir_path,"muti_dict.txt")
-py_file = os.path.join(dir_path,"pure_py.txt")
-
-chs_file = os.path.join(dir_path,"pure_chs.txt")
+import re
 
 
+class StopwordUtil():
+    re_stop = re.compile("[×“”~@…、。」！（），？=,\"'!().?]")
+    re_cant_py = re.compile("[0-9a-zA-ZａＡｂｃｋｔ]")
+    @staticmethod
+    def exist_cant_py(line):
+        ''''''
+        return re.search(StopwordUtil.re_cant_py,line) is not None
+
+    @staticmethod
+    def sub_cant_stop(line):
+        return re.sub(StopwordUtil.re_stop,"",line)
+
+    @staticmethod
+    def clean_line(line):
+        if not StopwordUtil.exist_cant_py(line):
+            return StopwordUtil.sub_cant_stop(line)
+        else:
+            return None
 
 class ChsMapper():
     def __init__(self, chsfile = None,pad_mode = 0):
         if chsfile is None:
-            chsfile = chs_file
+            chsfile = config.chs_dict_path
         self.chsfile = chsfile
         self.pad_mode = pad_mode
         self.load()
@@ -73,6 +84,14 @@ class ChsMapper():
 
         return batch
 
+    def check_line(self,line:str) -> dict:
+        oov = {}
+        for chs in line:
+            if chs not in self.word_num_map:
+                i = oov.setdefault(chs,0)
+                oov[chs] = i+1
+        return oov
+
 class PinyinMapper():
     '''
     用于建立拼音映射， 包括拼音和序号之间的，拼音和文字之间的
@@ -81,17 +100,15 @@ class PinyinMapper():
         在开头添加一行为静音
         在结尾添加一行为
     '''
-    def __init__(self,pyfile = None,use_pinyin = True,sil_mode = 0):
+    def __init__(self,pyfile = None,sil_mode = 0):
         '''
 
         :param pyfile:
         :param use_pinyin: 是否使用pinyin 库注音
         :param sil_mode: 决定静音音素的标识，0代表第一个，1代表最后一个，-1代表考虑ctc解码，结尾一个,-1 1个
         '''
-
-
         if pyfile is None:
-            pyfile = py_file
+            pyfile = config.py_dict_path
         self.py_file = pyfile
         self.max_index = None  # 这个max_index 是包含了代码添加的blank后的max_index，num_py_map[max_index] = <blank>
         self.sil_mode = sil_mode
@@ -112,8 +129,7 @@ class PinyinMapper():
         }
         load_phrases_dict(change_dict, )
 
-        if use_pinyin:
-            self.pinyin = lambda word:pinyin(word,Style.TONE3,errors="ignore")
+        self.pinyin = lambda word:pinyin(word,Style.TONE3,errors="ignore")
 
         self.load()
 
@@ -213,14 +229,17 @@ class PinyinMapper():
             print(f"\n'{x}' is None,please check dict.")
         return res
 
-    def sent2pylist(self,sample:str)->str:
+    def sent2pylist(self,sample:str,to_str = True)->[str,list]:
         '''
         :param sample: str,可能包含空格，或者不包含空格
         :return:
         '''
         result = self.pinyin(sample)
         result = [py[0] for py in result if " " not in py[0]]
-        return " ".join(result)
+        if to_str:
+            return " ".join(result)
+        else:
+            return result
 
     def pylist2vector(self,sample):
         sample = [self.py2num(x) for x in sample if x is not None]
@@ -241,3 +260,13 @@ class PinyinMapper():
         if return_list:
             return batch
         return "\n".join(batch)
+
+    def check_line(self,pyline:list):
+        oov = {}
+        for py in pyline:
+            py = py.strip("5\n")
+            if py not in self.py_num_map:
+                i = oov.setdefault(py,0)
+                oov[py] = i+1
+        return len(oov) == 0,oov
+
