@@ -242,6 +242,7 @@ class MelFeature4():
             data_input[i] = data_line[0:self.n_mels]  # 设置为400除以2的值（即200）是取一半数据，因为是对称的
 
         data_input = np.log(data_input + 1)
+
         return data_input.T
 
 class MelFeature5():

@@ -42,10 +42,10 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0"#使用一个GPU
 # WAVEM.train([thchs],)
 
 '''目前最有效的模型'''
-DCBNN1D.train([thchs],)
-# DCBNN1D.train([thchs,z200,prime,stcmd],load_model=config.join_model_path("./acoustic/DCBNN1D_step_13000.h5"))
+DCBNN1D.train([thchs],epoch=140)
+# DCBNN1D.train([thchs],load_model=config.join_model_path("./acoustic/DCBNN1D_epoch_140_step_140000.h5"))
 
 
 '''2019年7月2日08:34:19，开始尝试'''
 '''目前来看效果反而没有dcbnn1d好，如果添加残差结构可能会好一些'''
-DCBNN1Dplus.train([thchs,z200,stcmd,aishell,prime],load_model=None)
+# DCBNN1Dplus.train([thchs,z200,stcmd,aishell,prime],load_model=None)

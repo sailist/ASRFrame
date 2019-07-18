@@ -3,7 +3,7 @@ from keras.layers import Lambda,Input
 from keras import Model
 from tensorflow.python.ops import ctc_ops as ctc
 import tensorflow as tf
-
+from keras.layers import Layer
 
 class CTC_Batch_Cost():
     '''
@@ -72,22 +72,32 @@ class CTC_Batch_Cost():
                                            sequence_length=input_length,
                                            ignore_longer_outputs_than_inputs=True), 1)
 
-class CTCDecode():
-    '''用与CTC 解码，得到真实语音序列'''
+class CTCProbDecode():
+    '''用与CTC 解码，得到真实语音序列
+            该解码可以返回概率（虽然这个概率并不精确），但是会导致图节点更改，因此作为参考，本项目停止使用该类。
+    '''
     def __init__(self):
-        # base_pred = Input(shape=[None,None])
-        # feature_len = Input(shape=[1,])
+        # base_pred = Input(shape=[None,None],name="pred")
+        # feature_len = Input(shape=[1,],name="feature_len")
         # decode = Lambda(self._ctc_decode)([base_pred,feature_len])
+        # r1,prob = decode
         # self.model = Model([base_pred,feature_len],[decode])
         pass
 
     def _ctc_decode(self,args):
         base_pred, in_len = args
+        # print(base_pred,in_len)
+
         in_len = K.squeeze(in_len,axis=-1)
+
+        # print(base_pred,in_len)
+        # base_pred = K.stack(base_pred)
+        # in_len = K.stack(in_len)
+        # print(base_pred,in_len)
+
         r = K.ctc_decode(base_pred, in_len, greedy=True, beam_width=100, top_paths=1)
         r1 = K.eval(r[0][0])
         prob = K.eval(r[1][0])
-        # return r[:,0]
         return r1,prob
 
     def ctc_decode(self,base_pred,in_len,return_prob = False):
@@ -97,8 +107,56 @@ class CTCDecode():
         :return:
         '''
         # result, prob = self.model.predict([base_pred,in_len])
+        # result = self.model.predict([base_pred,in_len])
+        # prob = -1
         result, prob = self._ctc_decode([base_pred,in_len])
         print(prob)
+        if return_prob:
+            return result,prob
+        return result
+
+    def __call__(self,base_pred,in_len,return_prob = False):
+        return self.ctc_decode(base_pred,in_len,return_prob)
+
+class CTCDecodeLayer(Layer):
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def _ctc_decode(self,args):
+        base_pred, in_len = args
+        in_len = K.squeeze(in_len,axis=-1)
+
+        r = K.ctc_decode(base_pred, in_len, greedy=True, beam_width=100, top_paths=1)
+        r1 = r[0][0]
+        prob = r[1][0]
+        return [r1,prob]
+
+    def call(self, inputs, **kwargs):
+        return self._ctc_decode(inputs)
+
+    def compute_output_shape(self, input_shape):
+        return [(None,None),(1,)]
+
+
+class CTCDecode():
+    '''用与CTC 解码，得到真实语音序列
+            2019年7月18日所写，对ctc_decode使用模型进行了封装，从而在初始化完成后不会再有新节点的产生
+    '''
+    def __init__(self):
+        base_pred = Input(shape=[None,None],name="pred")
+        feature_len = Input(shape=[1,],name="feature_len")
+        r1, prob = CTCDecodeLayer()([base_pred,feature_len])
+        self.model = Model([base_pred,feature_len],[r1,prob])
+        pass
+
+    def ctc_decode(self,base_pred,in_len,return_prob = False):
+        '''
+        :param base_pred:[sample,timestamp,vector]
+        :param in_len: [sample,1]
+        :return:
+        '''
+        result,prob = self.model.predict([base_pred,in_len])
         if return_prob:
             return result,prob
         return result

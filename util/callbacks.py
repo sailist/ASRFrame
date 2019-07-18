@@ -77,9 +77,9 @@ class Lossplot(Callback):
 
     def loss_plot(self):
         plt.figure()
-        plt.plot(self.losses['epoch'])
-        for i in self.ilis:
-            plt.plot([i-1],[self.losses['batch'][i-1]],"r+")
+        plt.plot(self.losses['batch'])
+        for i,index in enumerate(self.ilis):
+            plt.plot([index],[self.losses['epoch'][i]],"r+")
         plt.grid(True)
         plt.xlabel(self.model_name)
         plt.ylabel('loss_epoch')

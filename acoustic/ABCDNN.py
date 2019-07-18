@@ -1,12 +1,12 @@
 from keras.models import Model
 from util.reader import VoiceDatasetList,VoiceLoader
 from util.mapmap import PinyinMapper
-from feature.mel_feature import MelFeature5
+from feature.mel_feature import *
 import os
 from keras.layers import Dense, Dropout, Input, Multiply, Conv2D, MaxPooling2D
 from keras.layers import Activation
 from core import AcousticModel, CTC_Batch_Cost
-
+import keras.backend as K
 class DCNN2D(AcousticModel):
     '''普通的2d卷积+maxpool，有一定的效果，但一般'''
     def compile(self,feature_shape = (256,128,1),label_max_string_length = 32,ms_output_size = 1242):
@@ -225,9 +225,10 @@ class DCBNN1D(AcousticModel):
         self.built(train_model,base_model)
 
     @staticmethod
-    def train(datagenes: list, load_model=None):
+    def train(datagenes: list, load_model=None,**kwargs):
         w, h = 1600, 200
         max_label_len = 64
+
 
         dataset = VoiceDatasetList()
         x_set, y_set = dataset.merge_load(datagenes)
@@ -238,7 +239,7 @@ class DCBNN1D(AcousticModel):
                               n_mels=h,
                               max_label_len=max_label_len,
                               pymap=pymap,
-                              melf=MelFeature5(),
+                              melf=MelFeature4(),
                               divide_feature_len=8,
                               all_train=False,
                               )
@@ -251,7 +252,12 @@ class DCBNN1D(AcousticModel):
             load_model = os.path.abspath(load_model)
             model_helper.load(load_model)
 
-        model_helper.fit(vloader, epoch=-1, save_step=1000, use_ctc=True)
+
+        epoch = kwargs.get("epoch",-1)
+        save_step = kwargs.get("save_step",1000)
+
+
+        model_helper.fit(vloader, epoch=epoch, save_step=save_step, use_ctc=True)
 
 class DCBNN1Dplus(AcousticModel):
 

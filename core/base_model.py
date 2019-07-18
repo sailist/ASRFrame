@@ -297,7 +297,7 @@ class AcousticModel(BaseModel):
             i+=1
             print(f"train epoch {i}/{epoch}.")
             self.train_model.fit_generator(voice_loader,save_step,callbacks=[loss_plot,time_clock,loss_report])
-
+            # K.get_session().graph.finalize()
             self.test(voice_loader.choice_test(), use_ctc=use_ctc)
             self.save(epoch=i,step=i*save_step)
 
