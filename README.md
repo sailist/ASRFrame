@@ -352,11 +352,3 @@ python run_ui.py
 
 
 欢迎大家提issue，我如果能回答会尽量回复的！另外我建立了一个项目交流群，群号：566836462，欢迎想交流语音识别、机器学习、深度学习的朋友加入！
-
-最后，如果大家想打赏，可以请我喝一杯咖啡或者奶茶（嘿）支持一下我的积极性~：
-
-支付宝：
-![image/alpay.jpg](image/alpay.jpg) 
-
-微信：
-![image/wxpay.jpg](image/wxpay.jpg)
