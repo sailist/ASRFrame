@@ -8,7 +8,7 @@ class MelFeature():
     该方法实现的Mel特征总觉得不对，停止使用
     改为使用MelFeature2/MelFeature3
     '''
-    def __init__(self,sr = 16000,n_fft=2048,hop_length=512,power=2.0,n_mels = 128,**kwargs):
+    def __init__(self,sr = 16000,n_fft=2048,hop_length=512,power=2.0,n_mels = 200,**kwargs):
         self.sr = sr
         self.n_fft = n_fft
         self.hop_length = hop_length
@@ -85,7 +85,7 @@ class MelFeature3():
     参考该博客的实现，博客介绍的较为具体，可以参考
     https://haythamfayek.com/2016/04/21/speech-processing-for-machine-learning.html
     '''
-    def __init__(self, sr=16000,pre_emphasis = 0.97,n_mels = 80):
+    def __init__(self, sr=16000,pre_emphasis = 0.97,n_mels = 200):
         self.sr = sr
 
         self.pre_emphasis = pre_emphasis

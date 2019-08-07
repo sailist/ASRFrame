@@ -484,6 +484,8 @@ class LanguageModel(BaseModel):
         all_norm = 0
         i = 0
         for pred, true in zip(result, ys):
+            pred = [i for i in pred if i != "_"]
+            true = [i for i in true if i != "_"]
             count, count_norm = self.evaluate.compare_sent(pred, true)
 
             all_count += count

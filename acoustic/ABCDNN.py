@@ -224,6 +224,7 @@ class DCBNN1D(AcousticModel):
 
         self.built(train_model,base_model)
 
+
     @staticmethod
     def train(datagenes: list, load_model=None,**kwargs):
         w, h = 1600, 200
@@ -239,7 +240,7 @@ class DCBNN1D(AcousticModel):
                               n_mels=h,
                               max_label_len=max_label_len,
                               pymap=pymap,
-                              melf=MelFeature4(),
+                              melf=MelFeature5(),
                               divide_feature_len=8,
                               all_train=False,
                               )

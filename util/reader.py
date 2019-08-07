@@ -342,7 +342,7 @@ class VoiceLoader(DataLoader):
             pass
 
 
-    def get_item(self,i,batch_size = None,mode = "train"):
+    def get_item(self,i,batch_size = None,mode = "train",return_word = False):
         '''
         :param i: start index,
         :param batch_size: batch size
@@ -364,6 +364,7 @@ class VoiceLoader(DataLoader):
 
         xs = []
         ys = []
+        ws = []
         while True:
             if i == set_size - 1:
                 i = 0
@@ -379,7 +380,11 @@ class VoiceLoader(DataLoader):
 
                 xs.append(audio)
                 if self.create_for_train:
-                    label = self.load_label_from_txt(y_set[i])
+                    if return_word:
+                        word,label = self.load_label_from_txt(y_set[i], return_word=return_word)
+                        ws.append(word)
+                    else:
+                        label = self.load_label_from_txt(y_set[i],return_word=return_word)
                     ys.append(label)
                 i += 1
             except:
@@ -411,17 +416,27 @@ class VoiceLoader(DataLoader):
             # 所有的padding必须在后面，否则ctc解码会出问题
             ys = pad_sequences(ys, self.max_label_len, padding="post", truncating="post", value=self.py_pad_index)
 
+
+
         placehold = np.zeros_like(ys)
+        if return_word:
+            placehold = ws
+
         if self.create_for_train:
             return [xs, ys, feature_len, label_len], placehold
         else:
             return [xs, None, feature_len, None], None
 
+    def _filter_feature(self,x,y,fl,ll):
+        if fl>ll:
+            return x,y,fl,ll
+        else:
+            return None,None,None,None
 
-    def create_iter(self,mode="train",one_batch = False):
+    def create_iter(self,mode="train",one_batch = False,return_word = False):
         index = 0
         while True:
-            yield self.get_item(index,self.batch_size,mode=mode)
+            yield self.get_item(index,self.batch_size,mode=mode,return_word=return_word)
             index += self.batch_size
             if index > self.set_size - 1:
                 index = 0
@@ -475,17 +490,18 @@ class VoiceLoader(DataLoader):
         else:
             return audio
 
-    def load_label_from_txt(self, y_fs)->np.ndarray:
+    def load_label_from_txt(self, y_fs,return_word = False):
         '''
         从txt文件中加载拼音，必须保证使用Cleaner中的类依次清洗过数据，保证了格式
         :param y_fs:
         :return:
         '''
         with open(y_fs,encoding="utf-8") as f:
-            f.readline()
+            word = f.readline()
             line = f.readline().strip()
             pylist = line.split(" ")
-
+            if return_word:
+                return word,self.pymap.pylist2vector(pylist)
             return self.pymap.pylist2vector(pylist)
 
     def summery(self,audio = True,label = True,plot = False,plot_dir = "./summary",dataset_name = None):
@@ -733,6 +749,9 @@ class TextLoader2(DataLoader):
         self.txt_fs = txtfs_set
 
         self.set_size = len(txtfs_set)
+        if self.set_size == 0:
+            raise Exception("No file found, please check the dataset path.")
+
         self.chs_map = chs_map
         self.pinyin_map = pinyin_map
         self.batch_size = batch_size
@@ -773,7 +792,7 @@ class TextLoader2(DataLoader):
         while True:
             if i > self.set_size-1:
                 i = 0
-
+            # print(self.set_size,i,len(self.streams))
             line,pyline = self.load_line(self.streams[i])
             if line is None:
                 self._reload(i)

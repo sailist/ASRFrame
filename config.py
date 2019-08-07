@@ -17,7 +17,7 @@ if platform.system() == "Linux":
     aishell_datapath = "/data/voicerec/ALShell-1/data_aishell"
     prime_datapath = "/data/voicerec/Primewords Chinese Corpus Set 1/primewords_md_2018_set1"
     stcmd_datapath = "/data/voicerec/Free ST Chinese Mandarin Corpus/ST-CMDS-20170001_1-OS"
-    wiki_datapath = "/data/voicerec/wiki/wiki_corpus_2"
+    wiki_datapath = "/data/voicerec/wiki/split_corpus"
 elif platform.system() == "Windows":
     thu_datapath = r"C:\E\jupyter_notebook\voice_reco\Dataset\thchs30"
     z200_datapath = r"C:\E\jupyter_notebook\voice_reco\Dataset\z200"

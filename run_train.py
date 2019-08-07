@@ -31,6 +31,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0"#使用一个GPU
 
 '''效果目前来看很不错，但是目前（2019年7月9日）下语料不足，貌似过拟合了，需要扩充语料后再尝试'''
 # SOMMalpha.train(wiki,None)
+SOMMalpha.train(wiki,os.path.join(config.language_model_dir,"SOMMalpha_epoch_327_step_163500.h5"))
 
 # SOMMword.train([thchs],None) # 注意SOMMword的train方法版本有点旧
 
@@ -42,8 +43,8 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0"#使用一个GPU
 # WAVEM.train([thchs],)
 
 '''目前最有效的模型'''
-DCBNN1D.train([thchs],epoch=140)
-# DCBNN1D.train([thchs],load_model=config.join_model_path("./acoustic/DCBNN1D_epoch_140_step_140000.h5"))
+# DCBNN1D.train([thchs],epoch=140)
+# DCBNN1D.train([thchs,stcmd,prime,aishell,z200],load_model=config.join_model_path("./acoustic/DCBNN1D_epoch_490_step_490000.h5"))
 
 
 '''2019年7月2日08:34:19，开始尝试'''
