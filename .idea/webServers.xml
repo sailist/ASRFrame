@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="4d9ef9f9-2c51-43e1-9628-9fd5559f46ff" name="voicerec" url="http://211.87.234.170">
+        <fileTransfer host="211.87.234.170" port="4239" rootFolder="/home/voicerec" accessType="SFTP">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+          <option name="port" value="4239" />
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>

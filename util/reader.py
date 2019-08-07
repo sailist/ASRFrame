@@ -14,7 +14,7 @@ from util.audiotool import VadExtract
 from keras.utils import Sequence
 from keras.preprocessing.sequence import pad_sequences
 from keras.utils.np_utils import to_categorical
-from util.mapmap import PinyinMapper
+from util.mapmap import PinyinMapper,ErrPinyinMapper
 
 
 filter_char = list('''[!"'\(\),\.\?@q~“”… 　、。」！（），？Ａａｂｃｋｔ]*''')
@@ -727,7 +727,9 @@ class TextLoader2(DataLoader):
                  padding_length=64,
                  cut_sub=None, create_for_train=True,
                  grain = None,
-                 strip_tone = False):
+                 strip_tone = False,
+                 enhance_errfit = True,
+                 errrepalce_rate = 0.1):
         '''
 
         :param txtfs_set:
@@ -766,6 +768,13 @@ class TextLoader2(DataLoader):
         if grain == TextLoader2.grain_alpha:
             strip_tone = True
         self.strip_tone = strip_tone
+
+        self.enhance_errfit = enhance_errfit
+        self.errrepalce_rate = errrepalce_rate
+        if enhance_errfit:
+            self.errmap = ErrPinyinMapper()
+
+
         self._initial()
 
     def remove_data(self,i):
@@ -846,6 +855,12 @@ class TextLoader2(DataLoader):
         if self.strip_tone:
             pyline = [i.strip("12345") for i in pyline]
             # print(pyline)
+        if self.enhance_errfit:
+            for i in range(len(pyline)):
+                if random.random() < self.errrepalce_rate:
+                    pyline[i] = self.errmap.replace(pyline[i])
+
+
         if self.grain == self.grain_alpha:
             line = "".join([self._pad_udl(word,py) for word,py in zip(line,pyline)])
 
@@ -861,6 +876,8 @@ class TextLoader2(DataLoader):
 
         return pyline, line
 
+    def random_replace(self,s):
+        pass
 
     def __len__(self):
         return self.set_size

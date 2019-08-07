@@ -2,6 +2,7 @@ import os,numpy as np
 import config
 from pypinyin import pinyin,Style,load_phrases_dict
 import re
+import json,random
 
 
 class StopwordUtil():
@@ -91,6 +92,21 @@ class ChsMapper():
                 i = oov.setdefault(chs,0)
                 oov[chs] = i+1
         return oov
+
+class ErrPinyinMapper():
+    def __init__(self,errdictfile = None):
+        if errdictfile is None:
+            errdictfile = config.err_dict_path
+        with open(errdictfile,encoding="utf-8") as f:
+            self.errdict = json.load(f)
+
+    def replace(self,s):
+        if s not in self.errdict:
+            return s
+        ap = self.errdict[s]
+        res = random.choice(ap)
+        # print(s,res)
+        return res
 
 class PinyinMapper():
     '''

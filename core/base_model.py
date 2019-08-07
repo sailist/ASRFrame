@@ -593,6 +593,7 @@ class BaseJoint():
 
     def record_from_wav(self,fs):
         sr,xs = wavfile.read(fs)
+        assert sr == 16000,f"sample rate must be equal to 16000. but {sr}"
         return self.raw_record(xs)
 
     def record_from_cmd(self, second = 5, use_ctc = True):

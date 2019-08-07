@@ -30,8 +30,8 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0"#使用一个GPU
 # DCNN1D.train([thchs],None)
 
 '''效果目前来看很不错，但是目前（2019年7月9日）下语料不足，貌似过拟合了，需要扩充语料后再尝试'''
-# SOMMalpha.train(wiki,None)
-SOMMalpha.train(wiki,os.path.join(config.language_model_dir,"SOMMalpha_epoch_327_step_163500.h5"))
+SOMMalpha.train(wiki,None)
+# SOMMalpha.train(wiki,os.path.join(config.language_model_dir,"SOMMalpha_epoch_484_step_242000.h5"))
 
 # SOMMword.train([thchs],None) # 注意SOMMword的train方法版本有点旧
 

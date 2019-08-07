@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="PublishConfigData" serverName="voicerec">
+    <serverData>
+      <paths name="voicerec">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/voice_rec/ASRFrame" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+          <excludedPaths>
+            <excludedPath local="true" path="$PROJECT_DIR$/.idea" />
+            <excludedPath local="true" path="$PROJECT_DIR$/.ipynb_checkpoints" />
+            <excludedPath local="true" path="$PROJECT_DIR$/.vscode" />
+            <excludedPath local="true" path="$PROJECT_DIR$/model" />
+          </excludedPaths>
+        </serverdata>
+      </paths>
+    </serverData>
+  </component>
+</project>

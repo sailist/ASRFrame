@@ -104,6 +104,8 @@ class SOMMalpha(LanguageModel):
         tloader = TextLoader2(txtfs, padding_length=max_label_len, pinyin_map=pinyin_map, chs_map=chs_map,
                               grain=TextLoader2.grain_alpha,
                               cut_sub=175,
+                              enhance_errfit=True,
+                              errrepalce_rate=0.5,
                               )
 
         model_helper = SOMMalpha()
