@@ -43,7 +43,7 @@ SOMMalpha.train(wiki,None)
 # WAVEM.train([thchs],)
 
 '''目前最有效的模型'''
-# DCBNN1D.train([thchs],epoch=140)
+DCBNN1D.train([thchs],epoch=140)
 # DCBNN1D.train([thchs,stcmd,prime,aishell,z200],load_model=config.join_model_path("./acoustic/DCBNN1D_epoch_490_step_490000.h5"))
 
 

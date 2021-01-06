@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="SshConfigs">
+    <configs>
+      <sshConfig authType="PASSWORD" host="211.87.234.170" id="80f7cdb8-4c5f-48f6-b0db-999f542bf5b4" port="4239" customName="voicerec" nameFormat="CUSTOM" username="voicerec">
+        <option name="customName" value="voicerec" />
+      </sshConfig>
+    </configs>
+  </component>
+</project>
